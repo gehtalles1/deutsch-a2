@@ -7,12 +7,17 @@
     
     <script>
         /**
-         * 【暗号检测逻辑】
-         * A2 专属暗号：Servus2026
+         * 【持久化免登录逻辑】
+         * 检查本地存储中是否有有效的访问令牌
          */
-        if (localStorage.getItem('map_access_a2') !== "Servus2026") {
+        const ACCESS_KEY = 'map_access_a2';
+        const VALID_TOKEN = "Servus2026";
+
+        // 如果没有验证过，或者验证信息不对，则退回 index.html 进行验证
+        if (localStorage.getItem(ACCESS_KEY) !== VALID_TOKEN) {
             window.location.href = "index.html";
         }
+        // 如果已经验证成功过，脚本会继续执行，用户直接看到地图
     </script>
 
     <script src="https://cdn.tailwindcss.com"></script>
@@ -143,7 +148,6 @@
 
     <script>
         function go(fileName) {
-            // 跳转逻辑：完全匹配文件名（含大小写）
             window.location.href = fileName + ".html";
         }
 
