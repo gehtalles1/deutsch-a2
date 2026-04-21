@@ -51,18 +51,26 @@
         .rocket-icon {
             font-size: 3.8rem;
             display: inline-block;
-            /* 4秒超长周期 + 贝塞尔曲线 = 极度舒适的节奏感 */
             animation: rocket-ultra-smooth 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
             will-change: transform, filter;
             margin-bottom: 2rem;
         }
 
+        /* 核心修改：输入框垂直水平绝对居中 */
         input {
             background: rgba(255, 255, 255, 0.05);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: white;
             transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
             -webkit-appearance: none;
+            line-height: normal; /* 修正默认行高 */
+            text-align: center;
+        }
+
+        input::placeholder {
+            color: rgba(255, 255, 255, 0.2);
+            text-align: center;
+            font-weight: 500;
         }
 
         input:focus {
@@ -103,8 +111,8 @@
 
         <div class="space-y-6">
             <input type="text" id="accessCode" 
-                   placeholder="请输入A2 进阶挑战激活码" 
-                   class="w-full px-6 py-5 rounded-3xl text-center font-bold text-lg placeholder-white/20">
+                   placeholder="激活码" 
+                   class="w-full h-16 px-6 rounded-3xl font-bold text-xl tracking-widest">
             
             <button onclick="verifyAccess()" 
                     class="btn-activate w-full py-5 rounded-3xl text-white font-black text-lg tracking-[0.2em]">
