@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>德语巅峰赛 | GEHTALLES</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&family=Noto+Sans+SC:wght@400;700;900&display=swap');
+        :root { --primary: #6366F1; --accent: #8B5CF6; --success: #22C55E; }
+        body { background: #F8FAFC; font-family: 'Noto Sans SC', sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        .app-header { background: #FFF; border-bottom: 1px solid #F1F5F9; }
+        .nav-inner { max-width: 500px; margin: 0 auto; padding: 12px 24px; text-align: center; }
+        .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .progress-box { flex: 1; margin: 0 20px; }
+        .progress-track { height: 6px; background: #E2E8F0; border-radius: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); transition: width 0.6s ease; }
+        .progress-num { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; color: #94A3B8; margin-top: 4px; }
+        .sentence-card { background: white; border-radius: 28px; padding: 32px 20px; width: 100%; border: 1px solid #F1F5F9; box-shadow: 0 4px 15px rgba(0,0,0,0.02); min-height: 180px; display: flex; align-items: center; justify-content: center; }
+        .sentence-wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 6px; }
+        .word-unit { font-size: 1.4rem; font-weight: 700; color: #334155; }
+        .blank-slot { display: inline-flex; align-items: center; justify-content: center; min-width: 90px; height: 44px; border-bottom: 3px solid #CBD5E1; font-size: 1.4rem; font-weight: 800; color: var(--primary); cursor: pointer; }
+        .active-slot { border-bottom-color: var(--primary); background: rgba(99, 102, 241, 0.05); }
+        .correct-anim { color: var(--success) !important; border-bottom-color: var(--success) !important; transform: scale(1.05); }
+        .options-grid { width: 100%; max-width: 360px; display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; }
+        .word-btn { background: white; border: 1.5px solid #E2E8F0; border-bottom-width: 4px; border-radius: 18px; height: 58px; font-size: 1.2rem; font-weight: 800; color: #475569; display: flex; align-items: center; justify-content: center; }
+        .word-btn:active { transform: translateY(2px); border-bottom-width: 1.5px; }
+        .modal { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9); display: none; align-items: center; justify-content: center; z-index: 100; padding: 20px; }
+        .modal-box { background: white; border-radius: 32px; width: 100%; max-width: 340px; padding: 32px; text-align: center; }
+        .err-item { border-left: 4px solid var(--primary); padding: 10px; margin: 10px 0; text-align: left; font-size: 14px; background: #F8FAFC; color: #475569; }
+    </style>
+</head>
+<body>
+    <header class="app-header">
+        <div class="nav-inner">
+            <div class="top-row">
+                <button onclick="window.location.href='main.html'" class="text-slate-400 text-2xl font-bold p-2">✕</button>
+                <div class="progress-box">
+                    <div class="progress-track"><div id="bar" class="progress-fill" style="width: 0%"></div></div>
+                    <div id="num" class="progress-num">01 / 20</div>
+                </div>
+                <button id="muteBtn" onclick="toggleMute()" class="text-slate-400 text-xl w-10">🔊</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 flex flex-col items-center justify-around px-6 py-4 max-w-xl mx-auto w-full">
+        <div class="text-center">
+            <div id="icon" class="text-5xl mb-2"></div>
+            <p id="trans" class="text-lg font-bold text-slate-700 leading-tight"></p>
+        </div>
+        <div class="sentence-card"><div id="sentence" class="sentence-wrap"></div></div>
+        <div id="options" class="options-grid"></div>
+    </main>
+
+    <div id="modal" class="modal">
+        <div class="modal-box">
+            <h3 id="modalTitle" class="text-lg font-black mb-4 text-slate-800">解析 💡</h3>
+            <div id="modalBody"></div>
+            <button id="modalBtn" onclick="closeModal()" class="w-full mt-6 py-4 bg-indigo-600 text-white rounded-2xl font-bold">返回重做</button>
+        </div>
+    </div>
+
+    <script>
+        const SOUND_URLS = {
+            pop: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3',
+            win: 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3',
+            err: 'https://assets.mixkit.co/active_storage/sfx/2572/2572-preview.mp3'
+        };
+
+        let audioCtx, audioBuffers = {}, isMuted = false, audioUnlocked = false;
+
+        function initAudioEngine() {
+            if (audioUnlocked) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            for (const [key, url] of Object.entries(SOUND_URLS)) {
+                fetch(url).then(r => r.arrayBuffer()).then(ab => audioCtx.decodeAudioData(ab)).then(buf => audioBuffers[key] = buf);
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            audioUnlocked = true;
+        }
+
+        function playSound(name) {
+            if (isMuted || !audioBuffers[name]) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const source = audioCtx.createBufferSource();
+            source.buffer = audioBuffers[name];
+            source.connect(audioCtx.destination);
+            source.start(0);
+        }
+
+        function toggleMute() { isMuted = !isMuted; document.getElementById('muteBtn').innerText = isMuted ? '🔇' : '🔊'; }
+
+        const db = [
+            { s: "Gestern <slot> ich müde, denn ich <slot> viel Arbeit.", a: ["war", "hatte"], t: "昨天我很累，因为我当时有很多工作。", i: "😴", exp: ["描述过去的主观状态或身份使用 sein 的过去式 war。", "表达“拥有”抽象概念（工作、时间、运气）使用 haben 的过去式 hatte。"] },
+            { s: "<slot> ihr im Urlaub? Ja, wir <slot> in Italien.", a: ["Wart", "waren"], t: "你们当时在度假吗？是的，我们在意大利。", i: "🇮🇹", exp: ["第二人称复数 ihr 对应的变位是 wart，句首需大写。", "第一人称复数 wir 对应的变位是 waren。"] },
+            { s: "Er <slot> Arzt werden, aber er <slot> nicht studieren.", a: ["wollte", "konnte"], t: "他以前想当医生，但他没法上大学。", i: "👨‍⚕️", exp: ["表达过去的意愿或打算使用情态动词 wollen 的过去式 wollte。", "表达客观条件的限制或能力丧失使用 können 的过去式 konnte。"] },
+            { s: "Warum <slot> du gestern weg? <slot> du einen Termin?", a: ["warst", "Hattest"], t: "你昨天为什么不在？你有个预约吗？", i: "📅", exp: ["询问过去所在的位置或状态，du 对应变位为 warst。", "德语中“预约”习惯搭配动词 haben，此处使用过去式 hatte 的变位。"] },
+            { s: "Wir <slot> am Wochenende eine Party. Es <slot> super!", a: ["hatten", "war"], t: "我们周末办了派对。棒极了！", i: "🥳", exp: ["举办活动/派对在德语中通常使用 haben 表示，此处为复数变位 hatten。", "对过去事件的评价和属性描述，使用 war。"] },
+            { s: "Damals <slot> alles einfacher, wir <slot> weniger Stress.", a: ["war", "hatten"], t: "那时一切都更简单，我们的压力更小。", i: "🕰️", exp: ["alles 在德语中视作单数代词，对应动词变位 war。", "表达承受/拥有压力，使用 hatten。"] },
+            { s: "Meine Schwester <slot> klein, aber sie <slot> schon Klavier spielen.", a: ["war", "konnte"], t: "我妹妹那时候还小，但她已经会弹钢琴了。", i: "🎹", exp: ["描述过去的年龄或身体特征使用 war。", "表达掌握某种技能，使用情态动词 können 的过去式 konnte。"] },
+            { s: "<slot> du Angst vor der Prüfung? Nein, ich <slot> bereit.", a: ["Hattest", "war"], t: "你怕考试吗？不，我准备好了。", i: "📝", exp: ["固定搭配 Angst haben vor...，此处 du 对应变位为 hattest。", "描述心理准备状态，使用 war。"] },
+            { s: "Ich <slot> früher rauchen, aber ich <slot> es nicht.", a: ["wollte", "durfte"], t: "我以前想抽烟，但我不被允许。", i: "🚭", exp: ["主观意愿使用 wollte。", "表达被允许、许可或权限（家长/法律），使用 dürfen 的过去式 durfte。"] },
+            { s: "Wo <slot> dein Bruder? Er <slot> im Fitnessstudio.", a: ["war", "war"], t: "你哥哥在哪？他在健身房。", i: "🏋️‍♂️", exp: ["询问及陈述过去所处地点，统一使用 sein 的过去式 war。"] },
+            { s: "Das Kind <slot> keine Lust, deshalb <slot> es weinen.", a: ["hatte", "musste"], t: "孩子没兴致，所以他不得不哭闹。", i: "😢", exp: ["表达“兴致/愿望”通常搭配 haben。", "表达无法逃避的必然性或客观强迫，使用 müssen 的过去式 musste。"] },
+            { s: "Ihr <slot> früher Nachbarn. <slot> ihr ein Auto?", a: ["wart", "Hattet"], t: "你们以前是邻居。你们当时有车吗？", i: "🏘️", exp: ["ihr 的 sein 变位为 wart。", "询问过去的财产拥有情况，使用 haben 的变位。"] },
+            { s: "Es <slot> dunkel, aber ich <slot> keine Taschenlampe.", a: ["war", "hatte"], t: "天很黑，但我没有手电筒。", i: "🔦", exp: ["描述自然环境或天气状况，通常使用无人称代词 es 搭配 war。", "缺乏某物即 kein... haben。"] },
+            { s: "Wer <slot> an der Tür? Ich <slot> es nicht.", a: ["war", "war"], t: "谁在门口？不是我。", i: "🚪", exp: ["这里的 wer 作为疑问代词视作第三人称单数。", "第一人称 ich 的 sein 过去式同样是 war。"] },
+            { s: "Damals <slot> wir noch Kinder. Wir <slot> viel Freizeit.", a: ["waren", "hatten"], t: "那时我们还是孩子。我们有许多空闲时间。", i: "🪁", exp: ["描述过去的身份，复数 wir 对应 waren。", "拥有时间搭配 hatten。"] },
+            { s: "Mein Vater <slot> Lehrer. Er <slot> sehr geduldig.", a: ["war", "war"], t: "我父亲曾是老师。他非常耐心。", i: "👨‍🏫", exp: ["在德语中，描述职业和性格品质均属于属性描述，统一使用 war。"] },
+            { s: "Die Prüfung <slot> unfair. Niemand <slot> die Fragen lösen.", a: ["war", "konnte"], t: "考试不公平。没人能解开这些题。", i: "❌", exp: ["评价过去的事物，使用 war。", "niemand（没有人）视作单数，表达无法做到某事使用 konnte。"] },
+            { s: "Letztes Jahr <slot> ich in Paris. Ich <slot> dort viel Glück.", a: ["war", "hatte"], t: "去年我在巴黎。我在那运气很好。", i: "🗼", exp: ["表示曾在某地，使用 war。", "Glück haben 是固定用法，此处使用过去式。"] },
+            { s: "Warum <slot> du so traurig? <slot> du Probleme?", a: ["warst", "Hattest"], t: "你当时为什么那么难过？你有麻烦吗？", i: "😟", exp: ["描述当时的情感状态，du 对应 warst。", "Probleme haben 表达“有麻烦/问题”。"] },
+            { s: "Sie <slot> krank, deshalb <slot> sie zu Hause bleiben.", a: ["war", "musste"], t: "她病了，所以她必须待在家里。", i: "🤒", exp: ["描述身体健康状况使用 war。", "表达医生要求或病情导致的必要性，使用 musste。"] }
+        ];
+
+        let quizDB = [...db].sort(() => Math.random() - 0.5);
+        let cur = 0, userAns = [], isLocked = false, finished = false;
+
+        function render() {
+            const q = quizDB[cur]; userAns = []; isLocked = false;
+            // 进度条满格修正
+            document.getElementById('bar').style.width = `${((cur + 1) / 20) * 100}%`;
+            document.getElementById('num').innerText = `${String(cur+1).padStart(2,'0')} / 20`;
+            document.getElementById('icon').innerText = q.i;
+            document.getElementById('trans').innerText = q.t;
+            const box = document.getElementById('sentence'); box.innerHTML = "";
+            let sIdx = 0;
+            q.s.split(" ").forEach(w => {
+                if(w.includes("<slot>")) {
+                    const slot = document.createElement('div');
+                    slot.className = "blank-slot active-slot";
+                    slot.dataset.idx = sIdx++;
+                    slot.onclick = () => undo(slot);
+                    box.appendChild(slot);
+                } else {
+                    const t = document.createElement('span'); t.className="word-unit"; t.innerText=w; box.appendChild(t);
+                }
+            });
+            updateUI();
+        }
+
+        function fill(word) {
+            if(isLocked) return;
+            initAudioEngine();
+            const slots = document.querySelectorAll('.blank-slot');
+            if(userAns.length < slots.length) {
+                playSound('pop');
+                userAns.push(word);
+                updateUI();
+                if(userAns.length === slots.length) setTimeout(check, 250);
+            }
+        }
+
+        function undo(el) {
+            if(isLocked) return;
+            const idx = parseInt(el.dataset.idx);
+            if(userAns[idx]) { userAns.splice(idx, 1); updateUI(); }
+        }
+
+        function updateUI() {
+            const slots = document.querySelectorAll('.blank-slot');
+            slots.forEach((s, i) => {
+                s.innerText = userAns[i] || "";
+                s.classList.remove('active-slot', 'correct-anim');
+                if(i === userAns.length) s.classList.add('active-slot');
+            });
+            const q = quizDB[cur];
+            const seeds = ["war", "War", "waren", "hatte", "Hatte", "wart", "Wart", "konnte", "wollte", "musste", "durfte"];
+            let pool = [...new Set([...q.a, ...seeds.sort(()=>Math.random()-0.5)])].slice(0, 6);
+            document.getElementById('options').innerHTML = pool.sort(()=>Math.random()-0.5).map(w => `<button class="word-btn" onclick="fill('${w}')">${w}</button>`).join('');
+        }
+
+        function check() {
+            isLocked = true;
+            const q = quizDB[cur]; 
+            let errHtml = "";
+            
+            // 修正解析索引逻辑
+            userAns.forEach((v, i) => { 
+                if(v !== q.a[i]) {
+                    const expText = q.exp[i] || q.exp[0]; // 兜底防止 undefined
+                    errHtml += `<div class="err-item"><b>第${i+1}处：</b>${expText}</div>`; 
+                } 
+            });
+
+            if(errHtml === "") {
+                playSound('win');
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                document.querySelectorAll('.blank-slot').forEach(s => s.classList.add('correct-anim'));
+                setTimeout(() => { 
+                    if(cur < 19) { cur++; render(); } 
+                    else showFinal(); 
+                }, 2000);
+            } else {
+                playSound('err');
+                document.getElementById('modalTitle').innerText = "解析 💡";
+                document.getElementById('modalBody').innerHTML = errHtml;
+                document.getElementById('modalBtn').innerText = "返回重做";
+                document.getElementById('modal').style.display = 'flex';
+            }
+        }
+
+        function showFinal() {
+            finished = true;
+            playSound('win');
+            document.getElementById('modalTitle').innerText = "🏆 巅峰挑战达成！";
+            document.getElementById('modalBody').innerHTML = "<p class='text-slate-600 py-4'>你已经完美掌握了德语过去式的核心用法。</p>";
+            document.getElementById('modalBtn').innerText = "进入地图页";
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        function closeModal() { 
+            if(finished) { window.location.href = 'map.html'; return; }
+            document.getElementById('modal').style.display = 'none'; 
+            isLocked = false; userAns = []; updateUI(); 
+        }
+
+        window.onload = render;
+    </script>
+</body>
+</html>
