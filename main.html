@@ -143,8 +143,8 @@
 
     <script>
         function go(fileName) {
-            // 动态跳转到对应的 .html 文件
-            window.location.href = `${fileName}.html`;
+            // 跳转逻辑：完全匹配文件名（含大小写）
+            window.location.href = fileName + ".html";
         }
 
         // 屏蔽右键保护内容
