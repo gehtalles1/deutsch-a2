@@ -6,7 +6,6 @@
     <title>德语 A2 全能通关挑战营</title>
     
     <script>
-        // 地图页的保镖：如果没有通行证，踢回登录页
         if (localStorage.getItem('map_access_a2') !== "Servus2026") {
             window.location.href = "index.html";
         }
@@ -18,7 +17,7 @@
         
         body { background-color: #FDFCFB; font-family: 'Noto Sans SC', sans-serif; color: #1E293B; overflow-x: hidden; }
 
-        /* 修复后的水印：增加安全边距，防止溢出 */
+        /* 优化后的全平台不折行水印 */
         #watermark-layer {
             position: fixed;
             inset: 0;
@@ -27,19 +26,26 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            padding: 40px; /* 增加边距 */
-            opacity: 0.12;
+            overflow: hidden; /* 确保缩放时不产生滚动条 */
+            opacity: 0.1; /* 稍微调浅一点，更有高级感 */
         }
 
         .wm-text {
-            font-size: clamp(20px, 6vw, 30px); /* 字体大小随屏幕缩放 */
+            font-size: 28px; /* 基础字号 */
             font-weight: 900;
             color: #000;
             transform: rotate(-25deg);
             text-align: center;
-            line-height: 1.5;
-            word-break: break-all; /* 防止长文本溢出 */
-            max-width: 90%; /* 限制宽度 */
+            white-space: nowrap; /* 【核心】强制文字不换行 */
+            user-select: none;
+            letter-spacing: 4px;
+        }
+
+        /* 针对手机端的自适应缩放，确保不溢出也不折行 */
+        @media (max-width: 480px) {
+            .wm-text {
+                transform: rotate(-25deg) scale(0.7); /* 手机端自动缩小到 70% */
+            }
         }
 
         .a2-card {
@@ -51,23 +57,35 @@
 </head>
 <body class="py-10 px-4">
     <div id="watermark-layer">
-        <div class="wm-text">正版授权：gehtalles刘老师德语</div>
+        <div class="wm-text">正版授权：GEHTALLES 刘老师德语</div>
     </div>
 
     <div class="app-container max-w-[480px] mx-auto relative z-10">
         <header class="text-center mb-10">
             <h1 class="text-3xl font-black mb-2 text-indigo-900">德语 A2 通关大挑战</h1>
-            <p class="text-[10px] text-slate-400 font-bold tracking-[0.2em]">Level A2 • 语法与实战进阶</p>
+            <p class="text-[10px] text-slate-400 font-bold tracking-[0.2em] uppercase">Level A2 • 语法与实战进阶</p>
             <div class="w-16 h-1 bg-indigo-600 rounded-full mx-auto mt-4"></div>
         </header>
 
         <main class="grid grid-cols-2 gap-4">
             <div onclick="go('01-Praeteritum')" class="a2-card p-5 flex flex-col items-center text-center">
-                <div class="w-12 h-12 bg-[#6366F1] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3">1</div>
+                <div class="w-12 h-12 bg-[#6366F1] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-lg">1</div>
                 <h3 class="text-sm font-black text-slate-800">过去时先锋营</h3>
                 <p class="text-[9px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Präteritum</p>
             </div>
-            </main>
+            
+            <div class="a2-card p-5 flex flex-col items-center text-center opacity-50">
+                <div class="w-12 h-12 bg-slate-200 rounded-2xl flex items-center justify-center text-slate-400 font-black text-xl mb-3">2</div>
+                <h3 class="text-sm font-black text-slate-400">敬请期待</h3>
+                <p class="text-[9px] text-slate-300 mt-1 uppercase font-bold">Coming Soon</p>
+            </div>
+        </main>
+
+        <footer class="mt-12 text-center pb-10">
+            <div class="inline-block px-5 py-1 border border-slate-200 rounded-full text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                GEHTALLES 工作室 | 德语 A2
+            </div>
+        </footer>
     </div>
 
     <script>
