@@ -6,77 +6,47 @@
     <title>德语 A2 全能通关挑战营</title>
     
     <script>
-        /**
-         * 【持久化免登录逻辑】
-         * 检查本地存储中是否有有效的访问令牌
-         */
-        const ACCESS_KEY = 'map_access_a2';
-        const VALID_TOKEN = "Servus2026";
-
-        // 如果没有验证过，或者验证信息不对，则退回 index.html 进行验证
-        if (localStorage.getItem(ACCESS_KEY) !== VALID_TOKEN) {
+        // 地图页的保镖：如果没有通行证，踢回登录页
+        if (localStorage.getItem('map_access_a2') !== "Servus2026") {
             window.location.href = "index.html";
         }
-        // 如果已经验证成功过，脚本会继续执行，用户直接看到地图
     </script>
 
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&display=swap');
         
-        body {
-            background-color: #FDFCFB; 
-            font-family: 'Noto Sans SC', sans-serif;
-            color: #1E293B;
-            -webkit-tap-highlight-color: transparent;
-        }
+        body { background-color: #FDFCFB; font-family: 'Noto Sans SC', sans-serif; color: #1E293B; overflow-x: hidden; }
 
-        .a2-card {
-            background: #FFFFFF;
-            border: 1px solid #E5E7EB;
-            border-bottom: 4px solid #D4D4D8; 
-            border-radius: 20px;
-            transition: all 0.2s ease;
-            cursor: pointer;
-            position: relative;
-            z-index: 10;
-        }
-
-        .a2-card:active {
-            transform: scale(0.96);
-            border-bottom-width: 1px;
-        }
-
-        .gradient-text-a2 {
-            background: linear-gradient(135deg, #4338CA 0%, #1E1B4B 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }
-
+        /* 修复后的水印：增加安全边距，防止溢出 */
         #watermark-layer {
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
+            inset: 0;
             pointer-events: none;
             z-index: 100;
             display: flex;
             align-items: center;
             justify-content: center;
-            overflow: hidden;
+            padding: 40px; /* 增加边距 */
             opacity: 0.12;
         }
 
         .wm-text {
-            font-size: 34px;
+            font-size: clamp(20px, 6vw, 30px); /* 字体大小随屏幕缩放 */
             font-weight: 900;
             color: #000;
             transform: rotate(-25deg);
-            white-space: nowrap;
-            user-select: none;
-            letter-spacing: 2px;
+            text-align: center;
+            line-height: 1.5;
+            word-break: break-all; /* 防止长文本溢出 */
+            max-width: 90%; /* 限制宽度 */
         }
+
+        .a2-card {
+            background: #FFFFFF; border: 1px solid #E5E7EB; border-bottom: 4px solid #D4D4D8; 
+            border-radius: 20px; transition: all 0.2s ease; cursor: pointer;
+        }
+        .a2-card:active { transform: scale(0.96); border-bottom-width: 1px; }
     </style>
 </head>
 <body class="py-10 px-4">
@@ -86,73 +56,23 @@
 
     <div class="app-container max-w-[480px] mx-auto relative z-10">
         <header class="text-center mb-10">
-            <h1 class="text-3xl font-black gradient-text-a2 mb-2">德语 A2 通关大挑战</h1>
-            <p class="text-[10px] text-slate-400 font-bold tracking-[0.2em] uppercase">Level A2 • 语法与实战进阶</p>
+            <h1 class="text-3xl font-black mb-2 text-indigo-900">德语 A2 通关大挑战</h1>
+            <p class="text-[10px] text-slate-400 font-bold tracking-[0.2em]">Level A2 • 语法与实战进阶</p>
             <div class="w-16 h-1 bg-indigo-600 rounded-full mx-auto mt-4"></div>
         </header>
 
-        <main>
-            <div class="grid grid-cols-2 gap-4">
-                
-                <div onclick="go('01-Praeteritum')" class="a2-card p-5 flex flex-col items-center text-center border-indigo-100 bg-white">
-                    <div class="w-12 h-12 bg-[#6366F1] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-lg">1</div>
-                    <h3 class="text-sm font-black text-slate-800">过去时先锋营</h3>
-                    <p class="text-[9px] text-slate-400 mt-1 font-bold uppercase">Präteritum</p>
-                </div>
-
-                <div onclick="go('a2-level-2')" class="a2-card p-5 flex flex-col items-center text-center">
-                    <div class="w-12 h-12 bg-[#8B5CF6] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-lg">2</div>
-                    <h3 class="text-sm font-black text-slate-800">反身动词镜像馆</h3>
-                    <p class="text-[9px] text-slate-400 mt-1 font-bold uppercase">Reflexive Verben</p>
-                </div>
-
-                <div onclick="go('a2-level-3')" class="a2-card p-5 flex flex-col items-center text-center">
-                    <div class="w-12 h-12 bg-[#A855F7] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-lg">3</div>
-                    <h3 class="text-sm font-black text-slate-800">情态动词进阶课</h3>
-                    <p class="text-[9px] text-slate-400 mt-1 font-bold uppercase">Modalverben</p>
-                </div>
-
-                <div onclick="go('a2-level-4')" class="a2-card p-5 flex flex-col items-center text-center">
-                    <div class="w-12 h-12 bg-[#4F46E5] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-lg">4</div>
-                    <h3 class="text-sm font-black text-slate-800">完成时高手进阶</h3>
-                    <p class="text-[9px] text-slate-400 mt-1 font-bold uppercase">Perfekt Master</p>
-                </div>
-
-                <div onclick="go('a2-level-5')" class="a2-card p-5 flex flex-col items-center text-center">
-                    <div class="w-12 h-12 bg-[#EC4899] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-lg">5</div>
-                    <h3 class="text-sm font-black text-slate-800">因为所以实验室</h3>
-                    <p class="text-[9px] text-slate-400 mt-1 font-bold uppercase">Weil-Sätze</p>
-                </div>
-
-                <div onclick="go('a2-level-6')" class="a2-card p-5 flex flex-col items-center text-center">
-                    <div class="w-12 h-12 bg-[#F43F5E] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-lg">6</div>
-                    <h3 class="text-sm font-black text-slate-800">我想知道...从句</h3>
-                    <p class="text-[9px] text-slate-400 mt-1 font-bold uppercase">Dass-Sätze</p>
-                </div>
-
-                <div onclick="go('a2-final')" class="a2-card p-5 flex flex-col items-center text-center bg-indigo-50 border-indigo-200">
-                    <div class="w-12 h-12 bg-[#1E1B4B] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-lg">🏆</div>
-                    <h3 class="text-sm font-black text-indigo-900">A2 全能大考</h3>
-                    <p class="text-[9px] text-indigo-400 mt-1 font-bold uppercase">Finale Prüfung</p>
-                </div>
-
+        <main class="grid grid-cols-2 gap-4">
+            <div onclick="go('01-Praeteritum')" class="a2-card p-5 flex flex-col items-center text-center">
+                <div class="w-12 h-12 bg-[#6366F1] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3">1</div>
+                <h3 class="text-sm font-black text-slate-800">过去时先锋营</h3>
+                <p class="text-[9px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Präteritum</p>
             </div>
-        </main>
-
-        <footer class="mt-12 text-center pb-10">
-            <div class="inline-block px-5 py-1 border border-slate-200 rounded-full text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                gehtalles 德语工作室 | A2 进阶地图
-            </div>
-        </footer>
+            </main>
     </div>
 
     <script>
-        function go(fileName) {
-            window.location.href = fileName + ".html";
-        }
-
-        // 屏蔽右键保护内容
-        document.oncontextmenu = function() { return false; };
+        function go(name) { window.location.href = name + ".html"; }
+        document.oncontextmenu = () => false;
     </script>
 </body>
 </html>
