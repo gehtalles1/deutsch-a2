@@ -9,65 +9,112 @@
         @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&display=swap');
         
         body {
-            background: linear-gradient(180deg, #1E1B4B 0%, #312E81 100%);
+            background: linear-gradient(180deg, #0F172A 0%, #1E1B4B 100%);
             font-family: 'Noto Sans SC', sans-serif;
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
+            overflow: hidden;
+            -webkit-font-smoothing: antialiased;
         }
 
         .login-card {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            border-radius: 30px;
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 48px;
             width: 90%;
             max-width: 400px;
+            padding: 3.5rem 2rem;
+            text-align: center;
+            box-shadow: 0 40px 100px -20px rgba(0, 0, 0, 0.7);
+        }
+
+        /* 极致丝滑的呼吸动画 */
+        @keyframes rocket-ultra-smooth {
+            0% { 
+                transform: scale(1) translateY(0); 
+                filter: drop-shadow(0 0 10px rgba(99, 102, 241, 0.3)); 
+            }
+            50% { 
+                transform: scale(1.08) translateY(-10px); 
+                filter: drop-shadow(0 0 30px rgba(99, 102, 241, 0.6)); 
+            }
+            100% { 
+                transform: scale(1) translateY(0); 
+                filter: drop-shadow(0 0 10px rgba(99, 102, 241, 0.3)); 
+            }
+        }
+
+        .rocket-icon {
+            font-size: 3.8rem;
+            display: inline-block;
+            /* 4秒超长周期 + 贝塞尔曲线 = 极度舒适的节奏感 */
+            animation: rocket-ultra-smooth 4s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+            will-change: transform, filter;
+            margin-bottom: 2rem;
         }
 
         input {
-            background: rgba(255, 255, 255, 0.1);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             color: white;
-            transition: all 0.3s ease;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+            -webkit-appearance: none;
         }
 
         input:focus {
             outline: none;
-            background: rgba(255, 255, 255, 0.2);
-            border-color: #818CF8;
+            background: rgba(255, 255, 255, 0.12);
+            border-color: #6366F1;
+            box-shadow: 0 0 20px rgba(99, 102, 241, 0.2);
         }
 
         .btn-activate {
-            background: linear-gradient(90deg, #6366F1 0%, #8B5CF6 100%);
-            box-shadow: 0 10px 20px -5px rgba(99, 102, 241, 0.4);
+            background: linear-gradient(135deg, #4F46E5 0%, #7C3AED 100%);
+            transition: all 0.3s ease;
+        }
+
+        /* 老师要求的大厂风 + 英语版权保护 */
+        .footer-copyright {
+            margin-top: 3.5rem;
+            font-size: 10px;
+            color: rgba(255, 255, 255, 0.3);
+            font-weight: 500;
+            letter-spacing: 0.1em;
+            line-height: 1.8;
+        }
+        
+        .footer-copyright span {
+            display: block;
+            opacity: 0.6;
+            letter-spacing: 0.05em;
         }
     </style>
 </head>
 <body>
 
-    <div class="login-card p-8 text-center shadow-2xl">
-        <div class="w-20 h-20 bg-indigo-500/20 rounded-3xl mx-auto mb-6 flex items-center justify-center">
-            <span class="text-4xl">🚀</span>
-        </div>
+    <div class="login-card">
+        <div class="rocket-icon">🚀</div>
 
-        <h1 class="text-2xl font-black text-white mb-2">德语 A2 进阶挑战</h1>
-        <p class="text-indigo-200/60 text-sm mb-8 font-bold tracking-widest uppercase">Level A2 Access</p>
+        <h1 class="text-3xl font-black text-white mb-10 tracking-tight">德语 A2 进阶挑战</h1>
 
-        <div class="space-y-4">
+        <div class="space-y-6">
             <input type="text" id="accessCode" 
-                   placeholder="请输入 A2 地图激活暗号" 
-                   class="w-full px-6 py-4 rounded-2xl text-center font-bold placeholder-indigo-300/40">
+                   placeholder="请输入A2 进阶挑战激活码" 
+                   class="w-full px-6 py-5 rounded-3xl text-center font-bold text-lg placeholder-white/20">
             
             <button onclick="verifyAccess()" 
-                    class="btn-activate w-full py-4 rounded-2xl text-white font-black tracking-widest transition-transform active:scale-95">
+                    class="btn-activate w-full py-5 rounded-3xl text-white font-black text-lg tracking-[0.2em]">
                 立即开启挑战
             </button>
         </div>
 
-        <p class="mt-8 text-[10px] text-indigo-300/40 font-bold uppercase tracking-widest">
-            © gehtalles 刘老师德语工作室
+        <p class="footer-copyright">
+            © GEHTALLES 刘老师德语工作室
+            <span>Copyright All Rights Reserved</span>
         </p>
     </div>
 
@@ -75,25 +122,23 @@
         function verifyAccess() {
             const code = document.getElementById('accessCode').value.trim();
             
-            // 这里设置 A2 的专属暗号
             if (code === "Servus2026") {
-                // 写入 A2 专属权限标识
                 localStorage.setItem('map_access_a2', 'Servus2026');
                 
-                // 成功反馈
-                document.querySelector('.btn-activate').innerHTML = "验证成功！进入中...";
+                const btn = document.querySelector('.btn-activate');
+                btn.innerHTML = "验证成功";
+                btn.style.background = "#059669";
                 
                 setTimeout(() => {
                     window.location.href = "main.html";
                 }, 800);
             } else {
-                alert("暗号不对哦，请检查发货清单或联系刘老师。");
+                alert("验证码不正确，请重新输入 ✍️");
                 document.getElementById('accessCode').value = "";
             }
         }
 
-        // 支持回车提交
-        document.addEventListener('keypress', function (e) {
+        document.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') verifyAccess();
         });
     </script>
