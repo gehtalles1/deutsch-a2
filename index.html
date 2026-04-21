@@ -2,50 +2,115 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>验证身份</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>德语A2通关大挑战</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* 这里的文字加粗加深，更显眼 */
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&display=swap');
+        
+        body {
+            background-color: #F8FAFC;
+            font-family: 'Noto Sans SC', sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            overflow: hidden;
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.98);
+            border: 1px solid rgba(226, 232, 240, 0.8);
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.05);
+        }
+
+        /* 优化后的硬件加速动效：杜绝卡顿 */
+        @keyframes rocket-float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-12px); }
+        }
+
+        .rocket-box {
+            font-size: 3.5rem;
+            display: inline-block;
+            will-change: transform; /* 强制启用硬件加速 */
+            animation: rocket-float 2.5s ease-in-out infinite;
+            margin-bottom: 1.5rem;
+        }
+
+        /* 标题美化：更厚重的大厂视觉 */
+        .main-title {
+            color: #1E293B;
+            font-weight: 900;
+            letter-spacing: -0.02em;
+            font-size: 1.75rem;
+        }
+
         #code-input {
-            color: #1E293B !important; 
+            color: #1E293B !important;
             font-weight: 900 !important;
-            font-size: 1.2rem;
             letter-spacing: 2px;
+            caret-color: #6366F1; /* 光标颜色 */
+        }
+
+        .btn-gradient {
+            background: linear-gradient(135deg, #4338CA 0%, #1E1B4B 100%);
+            box-shadow: 0 10px 25px -5px rgba(67, 56, 202, 0.3);
+        }
+
+        .divider {
+            height: 1px;
+            background: linear-gradient(to right, transparent, #E2E8F0, transparent);
         }
     </style>
 </head>
-<body class="bg-slate-50 flex items-center justify-center min-h-screen p-6">
-    <div class="bg-white p-8 rounded-3xl shadow-xl w-full max-w-sm text-center">
-        <h2 class="text-2xl font-black text-slate-800 mb-2">请输入激活码</h2>
-        <p class="text-slate-400 text-sm mb-6">输入 A2 专属暗号开启挑战</p>
-        
-        <input type="text" id="code-input" placeholder="在此输入..." 
-               class="w-full border-2 border-slate-200 rounded-2xl p-4 mb-4 focus:border-indigo-500 outline-none transition-all">
-        
-        <button onclick="verify()" 
-                class="w-full bg-indigo-600 text-white font-bold py-4 rounded-2xl shadow-lg active:scale-95 transition-transform">
-            立即进入
-        </button>
+<body class="min-h-screen flex flex-col items-center justify-center p-6">
+
+    <div class="glass-card w-full max-w-[400px] rounded-[3rem] p-12 text-center relative">
+        <header class="mb-10">
+            <div class="rocket-box">🚀</div>
+            <h1 class="main-title">德语 A2 通关大挑战</h1>
+        </header>
+
+        <div class="space-y-6">
+            <input type="text" id="code-input" placeholder="激活码" 
+                   class="w-full bg-slate-50 border-2 border-slate-100 rounded-[1.25rem] p-5 focus:bg-white focus:border-indigo-500 outline-none transition-all text-center">
+            
+            <button onclick="verify()" 
+                    class="w-full btn-gradient text-white font-black py-5 rounded-[1.25rem] active:scale-[0.96] transition-all duration-200 text-lg">
+                立即开启
+            </button>
+        </div>
     </div>
 
+    <footer class="mt-12 w-full max-w-[400px] text-center">
+        <div class="divider mb-6"></div>
+        <div class="text-slate-400 text-[11px] font-bold tracking-widest">
+            © 2026 GEHTALLES 刘老师工作室 | 正版授权
+        </div>
+    </footer>
+
     <script>
+        const ACCESS_KEY = 'map_access_a2';
+        const VALID_TOKEN = "Servus2026";
+
+        // 自动登录检测
+        if (localStorage.getItem(ACCESS_KEY) === VALID_TOKEN) {
+            window.location.href = "main.html";
+        }
+
         function verify() {
-            const code = document.getElementById('code-input').value;
-            if (code === "Servus2026") {
-                // 【关键步骤】在本地存入通行证
-                localStorage.setItem('map_access_a2', 'Servus2026');
-                // 跳转到地图
+            const input = document.getElementById('code-input').value.trim();
+            if (input === VALID_TOKEN) {
+                localStorage.setItem(ACCESS_KEY, VALID_TOKEN);
                 window.location.href = "main.html";
+            } else if (input === "") {
+                alert("请输入激活码哦！");
             } else {
-                alert("暗号不对哦，请检查大小写！");
+                alert("激活码错误，请重新输入。");
             }
         }
 
-        // 如果之前已经验证过，直接送去地图，不用再看登录框
-        if (localStorage.getItem('map_access_a2') === "Servus2026") {
-            window.location.href = "main.html";
-        }
+        document.getElementById('code-input').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') verify();
+        });
     </script>
 </body>
 </html>
