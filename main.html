@@ -17,7 +17,7 @@
         
         body { background-color: #FDFCFB; font-family: 'Noto Sans SC', sans-serif; color: #1E293B; overflow-x: hidden; }
 
-        /* 优化后的全平台不折行水印 */
+        /* 全平台不折行水印 */
         #watermark-layer {
             position: fixed;
             inset: 0;
@@ -47,14 +47,16 @@
             }
         }
 
+        /* 卡片基础样式 */
         .a2-card {
             background: #FFFFFF; border: 1px solid #E5E7EB; border-bottom: 4px solid #D4D4D8; 
             border-radius: 20px; transition: all 0.2s ease; cursor: pointer;
+            position: relative; overflow: hidden;
         }
         .a2-card:active { transform: scale(0.96); border-bottom-width: 1px; }
         
-        /* 激活关卡的呼吸微动效 */
-        .card-active { border-color: #EEF2FF; }
+        /* 激活关卡的深色投影 */
+        .card-active { border-bottom-color: #4F46E5; }
     </style>
 </head>
 <body class="py-10 px-4">
@@ -76,14 +78,20 @@
                 <p class="text-[9px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Präteritum</p>
             </div>
             
-            <div onclick="go('02-Reflexive-Verben')" class="a2-card p-5 flex flex-col items-center text-center border-indigo-100">
+            <div onclick="go('02-Reflexive-Verben')" class="a2-card p-5 flex flex-col items-center text-center">
                 <div class="w-12 h-12 bg-[#818CF8] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-lg shadow-indigo-100">2</div>
                 <h3 class="text-sm font-black text-slate-800">反身动词镜像馆</h3>
                 <p class="text-[9px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Reflexive Verben</p>
             </div>
 
+            <div onclick="go('03-modalverben')" class="a2-card p-5 flex flex-col items-center text-center card-active">
+                <div class="w-12 h-12 bg-[#A5B4FC] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-lg shadow-indigo-100">3</div>
+                <h3 class="text-sm font-black text-slate-800">情态动词进阶</h3>
+                <p class="text-[9px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Modalverben</p>
+            </div>
+
             <div class="a2-card p-5 flex flex-col items-center text-center opacity-50 cursor-not-allowed">
-                <div class="w-12 h-12 bg-slate-200 rounded-2xl flex items-center justify-center text-slate-400 font-black text-xl mb-3">3</div>
+                <div class="w-12 h-12 bg-slate-200 rounded-2xl flex items-center justify-center text-slate-400 font-black text-xl mb-3">4</div>
                 <h3 class="text-sm font-black text-slate-400">敬请期待</h3>
                 <p class="text-[9px] text-slate-300 mt-1 uppercase font-bold">Coming Soon</p>
             </div>
