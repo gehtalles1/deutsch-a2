@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>德语完成时专项训练</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&display=swap');
+        
+        /* 页面基础设置 */
+        html, body { height: 100%; margin: 0; overflow: hidden; background: #FFFBF5; font-family: 'Noto Sans SC', sans-serif; }
+        body { display: flex; flex-direction: column; }
+        
+        .progress-fill { height: 100%; background: #F59E0B; transition: width 0.4s; }
+
+        /* 核心内容区：控制题目整体下移 */
+        .content-wrapper { 
+            flex: 1; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            padding-top: 12vh; /* 增加顶部间距，让题目整体往下走 */
+            padding-left: 20px;
+            padding-right: 20px;
+        }
+
+        .question-block { width: 100%; text-align: center; }
+
+        #trans { 
+            font-size: clamp(1.2rem, 3.5vh, 1.5rem); 
+            line-height: 1.4; 
+            margin-bottom: 3vh; /* 拉开翻译与德语的距离 */
+            color: #475569;
+            font-weight: 700;
+        }
+
+        #sentenceContainer { 
+            display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline; 
+            gap: 8px 6px; width: 100%; max-width: 800px; margin: 0 auto;
+            font-size: clamp(1.4rem, 4.5vh, 1.8rem); 
+            line-height: 1.4;
+        }
+
+        .quiz-line { 
+            display: inline-block; min-width: 70px; border-bottom: 3px solid #E2E8F0; 
+            text-align: center; font-weight: 900; color: transparent;
+            padding-bottom: 2px; margin: 0 4px; transition: all 0.2s;
+        }
+        .is-filled { color: #6366F1 !important; border-bottom-color: #6366F1 !important; }
+        
+        /* 选项区：彻底下沉至底部 */
+        .bottom-container {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 0 20px 6vh 20px; /* 增加底部间距 */
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+
+        .option-btn { 
+            background: white; border: 2px solid #F1F5F9; border-bottom: 4px solid #E2E8F0; 
+            border-radius: 16px; transition: all 0.1s; font-weight: 900;
+            padding: clamp(14px, 2.5vh, 22px) 6px; 
+            font-size: 1.2rem; 
+            color: #334155;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.03);
+        }
+        .option-btn:active { transform: translateY(2px); border-bottom-width: 2px; }
+        
+        /* 弹窗样式 */
+        .modal { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .teacher-box { background: white; border-radius: 28px; width: 100%; max-width: 380px; padding: 24px; border-top: 8px solid #F59E0B; }
+        .hl { color: #F59E0B; font-weight: 900; }
+    </style>
+</head>
+<body>
+
+    <header class="bg-white p-3 border-b flex-none">
+        <div class="max-w-[500px] mx-auto flex items-center justify-between">
+            <button onclick="location.reload()" class="w-9 h-9 flex items-center justify-center rounded-full bg-slate-50">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="3"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <div class="flex-1 mx-5 text-center">
+                <div class="h-1.5 bg-slate-100 rounded-full overflow-hidden mb-1"><div id="bar" class="progress-fill" style="width: 0%"></div></div>
+                <span id="num" class="text-[10px] font-black text-orange-400 tracking-widest">01 / 30</span>
+            </div>
+            <span class="text-[12px] font-black text-slate-400 tracking-widest">ZIEL</span>
+        </div>
+    </header>
+
+    <main class="content-wrapper">
+        <div class="question-block">
+            <p class="text-[9px] font-black text-orange-200 tracking-[0.2em] mb-4 uppercase">Grammatik: Perfekt</p>
+            <h2 id="trans"></h2>
+            <div id="sentenceContainer" class="font-black text-slate-800"></div>
+        </div>
+    </main>
+
+    <div class="bottom-container">
+        <div id="optionsArea" class="options-grid"></div>
+        <button onclick="initGame()" class="w-full text-[9px] font-black text-slate-300 py-2 tracking-[0.3em] uppercase">↺ RESTART CHALLENGE</button>
+    </div>
+
+    <div id="modal" class="modal">
+        <div class="teacher-box">
+            <h3 class="text-slate-900 font-black text-base mb-3">👨‍🏫 刘老师小课堂：</h3>
+            <div id="expText" class="text-slate-600 text-sm leading-relaxed mb-6"></div>
+            <button onclick="closeModal()" class="w-full py-4 bg-slate-900 text-white rounded-xl font-black text-sm">明白了！</button>
+        </div>
+    </div>
+
+    <script>
+        const rawDB = [
+            { t: "我飞去北京了。", s: ["Ich", "H", "nach", "Peking", "P", "."], ansH: "bin", ansP: "geflogen", optsH: ["bin", "habe", "ist", "war"], optsP: ["geflogen", "gefliegen", "gefliegt", "fliegen"], expH: "位移运动搭配 <span class='hl'>sein</span>。", expP: "fliegen 的分词是 <span class='hl'>geflogen</span>。" },
+            { t: "这封信已经寄走了。", s: ["Der", "Brief", "H", "schon", "P", "."], ansH: "ist", ansP: "gegangen", optsH: ["ist", "hat", "sind", "wird"], optsP: ["gegangen", "gegangt", "gegingen", "gehen"], expH: "状态位移搭配 <span class='hl'>sein</span>。", expP: "gehen -> <span class='hl'>gegangen</span>。" },
+            { t: "演出开始了。", s: ["Die", "Show", "H", "P", "."], ansH: "hat", ansP: "begonnen", optsH: ["hat", "ist", "sind", "wird"], optsP: ["begonnen", "begonnt", "gebegonnen", "beginnen"], expH: "beginnen 搭配 <span class='hl'>haben</span>。", expP: "不可分词不加 ge。" },
+            { t: "他已经睡着了。", s: ["Er", "H", "schon", "P", "."], ansH: "ist", ansP: "eingeschlafen", optsH: ["ist", "hat", "war", "wird"], optsP: ["eingeschlafen", "geschlafen", "eingschlaft", "eingeschlaffen"], expH: "状态改变搭配 <span class='hl'>sein</span>。", expP: "可分动词 <span class='hl'>eingeschlafen</span>。" },
+            { t: "他在德国待了两年。", s: ["Er", "H", "zwei", "Jahre", "in", "Deutschland", "P", "."], ansH: "ist", ansP: "geblieben", optsH: ["ist", "hat", "war", "wird"], optsP: ["geblieben", "gebleiben", "gebleibt", "bleiben"], expH: "bleiben 是搭配 <span class='hl'>sein</span> 的特例。", expP: "分词为 <span class='hl'>geblieben</span>。" },
+            { t: "我们喝了三杯咖啡。", s: ["Wir", "H", "drei", "Tassen", "Kaffee", "P", "."], ansH: "haben", ansP: "getrunken", optsH: ["haben", "sind", "hat", "ist"], optsP: ["getrunken", "getrinkt", "getranken", "trinken"], expH: "及物动词用 <span class='hl'>haben</span>。", expP: "trinken -> <span class='hl'>getrunken</span>。" },
+            { t: "你找到钥匙了吗？", s: ["H", "du", "den", "Schlüssel", "P", "?"], ansH: "Hast", ansP: "gefunden", optsH: ["Hast", "Bist", "Hat", "Ist"], optsP: ["gefunden", "gefindet", "gefundet", "finden"], expH: "及物变位用 <span class='hl'>hast</span>。", expP: "强变化 <span class='hl'>gefunden</span>。" },
+            { t: "他昨天没来学校。", s: ["Er", "H", "gestern", "nicht", "zur", "Schule", "P", "."], ansH: "ist", ansP: "gekommen", optsH: ["ist", "hat", "bin", "war"], optsP: ["gekommen", "gekommt", "gekam", "kommen"], expH: "来/去位移用 <span class='hl'>sein</span>。", expP: "分词为 <span class='hl'>gekommen</span>。" },
+            { t: "我弄丢了我的手机。", s: ["Ich", "H", "mein", "Handy", "P", "."], ansH: "habe", ansP: "verloren", optsH: ["habe", "bin", "hat", "ist"], optsP: ["verloren", "geverloren", "verliert", "verlort"], expH: "及物用 <span class='hl'>haben</span>。", expP: "ver- 不加 ge。" },
+            { t: "你们写完作业了吗？", s: ["H", "ihr", "die", "Hausaufgaben", "P", "?"], ansH: "Habt", ansP: "geschrieben", optsH: ["Habt", "Seid", "Haben", "Sind"], optsP: ["geschrieben", "geschreibt", "geschibben", "schreiben"], expH: "ihr 对应 <span class='hl'>habt</span>。", expP: "ei 变 ie：<span class='hl'>geschrieben</span>。" },
+            { t: "天变热了。", s: ["Es", "H", "warm", "P", "."], ansH: "ist", ansP: "geworden", optsH: ["ist", "hat", "wird", "war"], optsP: ["geworden", "gewerdet", "worden", "gewird"], expH: "状态改变用 <span class='hl'>sein</span>。", expP: "werden -> <span class='hl'>geworden</span>。" },
+            { t: "他们跳舞跳了一个晚上。", s: ["Sie", "H", "die", "ganze", "Nacht", "P", "."], ansH: "haben", ansP: "getanzt", optsH: ["haben", "sind", "hat", "ist"], optsP: ["getanzt", "getanzen", "getanztet", "tanzen"], expH: "持续性动作周 <span class='hl'>haben</span>。", expP: "规则变化 <span class='hl'>getanzt</span>。" },
+            { t: "刚才发生什么了？", s: ["Was", "H", "gerade", "P", "?"], ansH: "ist", ansP: "passiert", optsH: ["ist", "hat", "sind", "wird"], optsP: ["passiert", "gepassiert", "passieren", "gepasst"], expH: "发生类动词用 <span class='hl'>sein</span>。", expP: "-ieren 结尾不加 ge。" },
+            { t: "大巴车已经出发了。", s: ["Der", "Bus", "H", "schon", "P", "."], ansH: "ist", ansP: "abgefahren", optsH: ["ist", "hat", "wird", "sind"], optsP: ["abgefahren", "geabgefahren", "abfahren", "abgefahrt"], expH: "位移搭配 <span class='hl'>sein</span>。", expP: "可分词 <span class='hl'>abgefahren</span>。" },
+            { t: "我昨天见到他了。", s: ["Ich", "H", "ihn", "gestern", "P", "."], ansH: "habe", ansP: "gesehen", optsH: ["habe", "bin", "hat", "ist"], optsP: ["gesehen", "gesieht", "geseht", "sehen"], expH: "及物用 <span class='hl'>haben</span>。", expP: "分词为 <span class='hl'>gesehen</span>。" },
+            { t: "他跳进了水里。", s: ["Er", "H", "ins", "Wasser", "P", "."], ansH: "ist", ansP: "gesprungen", optsH: ["ist", "hat", "wird", "war"], optsP: ["gesprungen", "gespringen", "gesprang", "gesprungt"], expH: "位移搭配 <span class='hl'>sein</span>。", expP: "元音变位 <span class='hl'>gesprungen</span>。" },
+            { t: "你们听音乐了吗？", s: ["H", "ihr", "Musik", "P", "?"], ansH: "Habt", ansP: "gehört", optsH: ["Habt", "Seid", "Haben", "Sind"], optsP: ["gehört", "gehoren", "gehören", "hören"], expH: "ihr 对应 <span class='hl'>habt</span>。", expP: "规则分词 <span class='hl'>gehört</span>。" },
+            { t: "天变亮了。", s: ["Es", "H", "hell", "P", "."], ansH: "ist", ansP: "geworden", optsH: ["ist", "hat", "wird", "war"], optsP: ["geworden", "gewerdet", "worden", "gewird"], expH: "状态改变用 <span class='hl'>sein</span>。", expP: "分词 <span class='hl'>geworden</span>。" },
+            { t: "他把事情告诉我了。", s: ["Er", "H", "es", "mir", "P", "."], ansH: "hat", ansP: "erzählt", optsH: ["hat", "ist", "habe", "bin"], optsP: ["erzählt", "geerzählt", "erzähl", "erzähltet"], expH: "讲述类用 <span class='hl'>hat</span>。", expP: "不可分词不加 ge。" },
+            { t: "你迟到了吗？", s: ["H", "du", "dich", "P", "?"], ansH: "Hast", ansP: "verspätet", optsH: ["Hast", "Bist", "Hat", "Ist"], optsP: ["verspätet", "geverspätet", "verspät", "verspäten"], expH: "反身动词变位用 <span class='hl'>haben</span>。", expP: "分词为 <span class='hl'>verspätet</span>。" },
+            { t: "我们爬上楼梯了。", s: ["Wir", "H", "die", "Treppe", "P", "."], ansH: "sind", ansP: "gestiegen", optsH: ["sind", "haben", "ist", "hat"], optsP: ["gestiegen", "gestiegt", "gesteigen", "steigen"], expH: "位移运动用 <span class='hl'>sein</span>。", expP: "ei 变 ie：<span class='hl'>gestiegen</span>。" },
+            { t: "你们吃午饭了吗？", s: ["H", "ihr", "schon", "P", "?"], ansH: "Habt", ansP: "gegessen", optsH: ["Habt", "Seid", "Haben", "Sind"], optsP: ["gegessen", "geessen", "gegeßt", "essen"], expH: "ihr 对应 <span class='hl'>habt</span>。", expP: "特殊分词 <span class='hl'>gegessen</span>。" },
+            { t: "他帮了我。", s: ["Er", "H", "mir", "P", "."], ansH: "hat", ansP: "geholfen", optsH: ["hat", "ist", "habe", "bin"], optsP: ["geholfen", "gehelft", "gehalf", "helfen"], expH: "及物用 <span class='hl'>hat</span>。", expP: "强变化分词 <span class='hl'>geholfen</span>。" },
+            { t: "刚才你在哪里？", s: ["Wo", "H", "du", "P", "?"], ansH: "bist", ansP: "gewesen", optsH: ["bist", "hast", "warst", "ist"], optsP: ["gewesen", "gesein", "gewar", "sein"], expH: "sein 的助动词是 <span class='hl'>sein</span>。", expP: "分词为 <span class='hl'>gewesen</span>。" },
+            { t: "他们已经离开了。", s: ["Sie", "H", "schon", "P", "."], ansH: "sind", ansP: "gegangen", optsH: ["sind", "haben", "hat", "ist"], optsP: ["gegangen", "gegangt", "gegingen", "gehen"], expH: "离开是位移，用 <span class='hl'>sein</span>。", expP: "分词为 <span class='hl'>gegangen</span>。" },
+            { t: "他给了我一些钱。", s: ["Er", "H", "mir", "Geld", "P", "."], ansH: "hat", ansP: "gegeben", optsH: ["hat", "ist", "habe", "bin"], optsP: ["gegeben", "gegebt", "gegab", "geben"], expH: "给东西是及物，用 <span class='hl'>hat</span>。", expP: "分词为 <span class='hl'>gegeben</span>。" },
+            { t: "我那时候在那儿。", s: ["Ich", "H", "da", "P", "."], ansH: "bin", ansP: "gewesen", optsH: ["bin", "habe", "war", "ist"], optsP: ["gewesen", "gesein", "gewar", "sein"], expH: "Ich 对应 <span class='hl'>bin</span>。", expP: "分词为 <span class='hl'>gewesen</span>。" },
+            { t: "天变暗了。", s: ["Es", "H", "dunkel", "P", "."], ansH: "ist", ansP: "geworden", optsH: ["ist", "hat", "wird", "war"], optsP: ["geworden", "gewerdet", "worden", "gewird"], expH: "状态改变用 <span class='hl'>sein</span>。", expP: "变成用 <span class='hl'>geworden</span>。" },
+            { t: "你们买票了吗？", s: ["H", "ihr", "Tickets", "P", "?"], ansH: "Habt", ansP: "gekauft", optsH: ["Habt", "Seid", "Haben", "Sind"], optsP: ["gekauft", "gekauften", "gekaufe", "kaufen"], expH: "ihr 对应 <span class='hl'>habt</span>。", expP: "规则分词 <span class='hl'>gekauft</span>。" },
+            { t: "他把书看完了。", s: ["Er", "H", "das", "Buch", "P", "."], ansH: "hat", ansP: "gelesen", optsH: ["hat", "ist", "wird", "war"], optsP: ["gelesen", "gelest", "gelesent", "lesen"], expH: "读书及物，用 <span class='hl'>hat</span>。", expP: "强变化分词 <span class='hl'>gelesen</span>。" }
+        ];
+
+        let gameList = [], cur = 0, selH = "", selP = "";
+
+        function initGame() {
+            gameList = [...rawDB].sort(() => Math.random() - 0.5);
+            cur = 0; renderLevel();
+        }
+
+        function renderLevel() {
+            const q = gameList[cur]; selH = ""; selP = "";
+            document.getElementById('bar').style.width = `${((cur + 1) / gameList.length) * 100}%`;
+            document.getElementById('num').innerText = `${String(cur + 1).padStart(2, '0')} / ${gameList.length}`;
+            document.getElementById('trans').innerText = q.t;
+            const container = document.getElementById('sentenceContainer');
+            container.innerHTML = "";
+            q.s.forEach(word => {
+                if(word === "H" || word === "P") {
+                    const span = document.createElement('span'); span.id = "g" + word;
+                    span.className = "quiz-line"; span.innerHTML = "&nbsp;"; container.appendChild(span);
+                } else {
+                    const txt = document.createElement('span'); txt.innerText = word; container.appendChild(txt);
+                }
+            });
+            const area = document.getElementById('optionsArea'); area.innerHTML = "";
+            const allOpts = [...q.optsH, ...q.optsP].sort(() => Math.random() - 0.5);
+            allOpts.forEach(text => {
+                const btn = document.createElement('button'); btn.className = "option-btn";
+                btn.innerText = text;
+                btn.onclick = () => {
+                    if (q.optsH.includes(text)) {
+                        selH = text; const target = document.getElementById('gH');
+                        target.innerText = text; target.classList.add('is-filled');
+                    } else if (q.optsP.includes(text)) {
+                        selP = text; const target = document.getElementById('gP');
+                        target.innerText = text; target.classList.add('is-filled');
+                    }
+                    if(selH && selP) setTimeout(check, 300);
+                };
+                area.appendChild(btn);
+            });
+        }
+
+        function check() {
+            const q = gameList[cur];
+            if (selH.toLowerCase() === q.ansH.toLowerCase() && selP.toLowerCase() === q.ansP.toLowerCase()) {
+                confetti({ particleCount: 80, spread: 70, origin: { y: 0.8 } });
+                setTimeout(() => { cur++; if(cur < gameList.length) renderLevel(); else alert('挑战完成！刘老师为你感到骄傲！'); }, 1200);
+            } else {
+                let finalExp = "";
+                if (selH.toLowerCase() !== q.ansH.toLowerCase() && selP.toLowerCase() === q.ansP.toLowerCase()) finalExp = "<b>助动词选错咯：</b><br>" + q.expH;
+                else if (selH.toLowerCase() === q.ansH.toLowerCase() && selP.toLowerCase() !== q.ansP.toLowerCase()) finalExp = "<b>分词形式不对：</b><br>" + q.expP;
+                else finalExp = "<b>两处都需要仔细思考：</b><br>" + q.expH + "<br><br>" + q.expP;
+                document.getElementById('expText').innerHTML = finalExp;
+                document.getElementById('modal').style.display = 'flex';
+            }
+        }
+
+        function closeModal() { document.getElementById('modal').style.display = 'none'; renderLevel(); }
+        window.onload = initGame;
+    </script>
+</body>
+</html>
