@@ -6,6 +6,7 @@
     <title>德语 A2 全能通关挑战营</title>
     
     <script>
+        // 登录权限检查
         if (localStorage.getItem('map_access_a2') !== "Servus2026") {
             window.location.href = "index.html";
         }
@@ -90,10 +91,10 @@
                 <p class="text-[9px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Modalverben</p>
             </div>
 
-            <div class="a2-card p-5 flex flex-col items-center text-center opacity-50 cursor-not-allowed">
-                <div class="w-12 h-12 bg-slate-200 rounded-2xl flex items-center justify-center text-slate-400 font-black text-xl mb-3">4</div>
-                <h3 class="text-sm font-black text-slate-400">敬请期待</h3>
-                <p class="text-[9px] text-slate-300 mt-1 uppercase font-bold">Coming Soon</p>
+            <div onclick="go('04-superperfekt')" class="a2-card p-5 flex flex-col items-center text-center card-active">
+                <div class="w-12 h-12 bg-[#C7D2FE] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-lg shadow-indigo-100">4</div>
+                <h3 class="text-sm font-black text-slate-800">完成时高手进阶</h3>
+                <p class="text-[9px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Perfekt Pro</p>
             </div>
         </main>
 
@@ -105,7 +106,11 @@
     </div>
 
     <script>
-        function go(name) { window.location.href = name + ".html"; }
+        // 跳转函数
+        function go(name) { 
+            window.location.href = name + ".html"; 
+        }
+        // 禁用右键菜单，保护课件
         document.oncontextmenu = () => false;
     </script>
 </body>
