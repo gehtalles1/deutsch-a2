@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>德语 A2 通关 | 第3关</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&family=Noto+Sans+SC:wght@400;700;900&display=swap');
+        :root { --primary: #6366F1; --accent: #8B5CF6; --success: #10B981; }
+        body { background: #FDFCFB; font-family: 'Noto Sans SC', sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        
+        @keyframes breath { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } }
+        #icon { animation: breath 3s infinite; display: inline-block; }
+
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        
+        .sentence-box { min-height: 140px; background: white; border: 2px dashed #E2E8F0; border-radius: 28px; display: flex; flex-wrap: wrap; align-content: center; justify-content: center; gap: 10px; padding: 20px; width: 94%; max-width: 450px; margin: 0 auto; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); }
+        
+        .word-tile { background: #F8FAFC; color: #1E293B; padding: 12px 18px; border-radius: 16px; font-weight: 800; font-size: 1.1rem; border-bottom: 4px solid #E2E8F0; transition: all 0.2s; cursor: pointer; }
+        .word-tile:active { transform: translateY(2px); border-bottom-width: 0; }
+        .word-tile.used { opacity: 0.2; pointer-events: none; }
+        .word-tile.active-pick { background: #EEF2FF; color: #6366F1; border-bottom-color: #C7D2FE; }
+
+        .modal { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.95); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .modal-box { background: white; border-radius: 32px; width: 100%; max-width: 360px; padding: 35px; }
+    </style>
+</head>
+<body>
+
+    <header class="bg-white p-5 border-b border-slate-50">
+        <div class="max-w-[500px] mx-auto flex items-center justify-between">
+            <button onclick="window.location.href='main.html'" class="w-10 h-10 flex items-center justify-center rounded-full bg-slate-50 active:bg-slate-100 transition-colors">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+
+            <div class="flex-1 mx-4">
+                <div class="h-2 bg-slate-100 rounded-full overflow-hidden"><div id="bar" class="progress-fill" style="width: 0%"></div></div>
+                <div id="num" class="text-[10px] text-center mt-1 font-black text-indigo-300 tracking-widest uppercase">Schritt 01 / 30</div>
+            </div>
+
+            <span class="text-[14px] font-black text-slate-400 tracking-wider">ZIEL</span>
+        </div>
+    </header>
+
+    <main class="flex-1 flex flex-col items-center justify-around py-6">
+        <div class="text-center px-6">
+            <div id="icon" class="text-6xl mb-4">✍️</div>
+            <h2 id="trans" class="text-xl font-black text-slate-800 leading-tight"></h2>
+            <p class="text-[10px] text-indigo-400 mt-3 font-bold uppercase tracking-[0.2em]">Satzbau-Training</p>
+        </div>
+
+        <div id="displayArea" class="sentence-box"></div>
+        <div id="optionsArea" class="flex flex-wrap justify-center gap-3 px-6 max-w-[480px]"></div>
+
+        <button onclick="resetCurrent()" class="text-[11px] font-black text-slate-300 hover:text-indigo-400 uppercase tracking-widest flex items-center gap-2">
+            <span>↺</span> Reset
+        </button>
+    </main>
+
+    <div id="modal" class="modal">
+        <div id="modalContent" class="modal-box"></div>
+    </div>
+
+    <script>
+        const SOUND_URLS = {
+            pop: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3',
+            win: 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3',
+            err: 'https://assets.mixkit.co/active_storage/sfx/2572/2572-preview.mp3'
+        };
+
+        let audioCtx, audioBuffers = {};
+        function playSound(name) {
+            if(!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            if(!audioBuffers[name]) {
+                fetch(SOUND_URLS[name]).then(r => r.arrayBuffer()).then(ab => audioCtx.decodeAudioData(ab)).then(buf => audioBuffers[name] = buf);
+            }
+            const s = audioCtx.createBufferSource(); s.buffer = audioBuffers[name]; s.connect(audioCtx.destination); s.start(0);
+        }
+
+        const db = [
+            { t: "你应该去看医生。", a: ["Du", "solltest", "zum", "Arzt", "gehen."], i: "🩺", exp: "<b>刘老师点拨：</b>solltest 表示诚恳的建议（你应该...）。注意语序：情态动词占二位，行为动词原形 gehen 甩到句尾！" },
+            { t: "我那时不会开车。", a: ["Ich", "konnte", "nicht", "Auto", "fahren."], i: "🚗", exp: "<b>刘老师点拨：</b>können 的过去时是 konnte。注意 nicht 习惯性守在原形动词 fahren 的前面。" },
+            { t: "我们那时必须留在家。" , a: ["Wir", "mussten", "zu", "Hause", "bleiben."], i: "🏠", exp: "<b>刘老师点拨：</b>müssen 的过去时是 mussten（无变音）。zu Hause 是固定短语，表示状态‘在家’。" },
+            { t: "他当时想买那部手机。", a: ["Er", "wollte", "das", "Handy", "kaufen."], i: "📱", exp: "<b>刘老师点拨：</b>表达过去的意愿用 wollte。记住：二位变位、尾部原形，这是德语的‘框形结构’。" },
+            { t: "你以前被允许喝酒吗？", a: ["Durftest", "du", "Alkohol", "trinken?"], i: "🍺", exp: "<b>刘老师点拨：</b>疑问句要把变位动词提至句首。注意主语是 du，词尾必须加 -st。" },
+            { t: "你应该多练习。", a: ["Du", "solltest", "mehr", "üben."], i: "📚", exp: "<b>刘老师点拨：</b>这里的 sollte 是虚拟二式表示建议。虽然形式像过去时，但在建议语境下翻译为‘应该’。" },
+            { t: "那时我不被允许出去。", a: ["Ich", "durfte", "nicht", "ausgehen."], i: "🚫", exp: "<b>刘老师点拨：</b>dürfen 变位为 durfte。ausgehen 是原形动词，整体放在最后。" },
+            { t: "昨天你必须工作吗？", a: ["Musstest", "du", "gestern", "arbeiten?"], i: "💼", exp: "<b>刘老师点拨：</b>注意变位：müssen 的过去时词干是 musst-，主语是 du，所以加词尾 -est。" },
+            { t: "他们当时想去柏林。", a: ["Sie", "wollten", "nach", "Berlin", "fahren."], i: "🚄", exp: "<b>刘老师点拨：</b>复数 sie 对应 wollten。地点方向记得用 nach 引导，Berlin 首字母大写。" },
+            { t: "我过去无法理解他。", a: ["Ich", "konnte", "ihn", "nicht", "verstehen."], i: "🤷", exp: "<b>刘老师点拨：</b>konnte 表示过去的能力。注意及物动词 verstehen 的宾语 ihn 用第四格。" },
+            { t: "你应该少抽点烟。", a: ["Du", "solltest", "weniger", "rauchen."], i: "🚬", exp: "<b>刘老师点拨：</b>solltest 表示建议。weniger 是比较级，表示‘更少地’。" },
+            { t: "我们那时可以迟点来。", a: ["Wir", "konnten", "später", "kommen."], i: "🕒", exp: "<b>刘老师点拨：</b>konnten 对应复数 wir。später 是形容词比较级，表示‘晚一点’。" },
+            { t: "他当时必须吃药。", a: ["Er", "musste", "Medikamente", "nehmen."], i: "💊", exp: "<b>刘老师点拨：</b>服用药物德语用 nehmen。注意名词 Medikamente 的复数形式及大写。" },
+            { t: "你当时想吃什么？", a: ["Was", "wolltest", "du", "essen?"], i: "🍕", exp: "<b>刘老师点拨：</b>特殊疑问句：疑问词 + 变位情态动词 + 主语 + ... + 原形。逻辑清晰，德语就简单！" },
+            { t: "你应该别这么累。", a: ["Du", "solltest", "nicht", "so", "müde", "sein."], i: "🥱", exp: "<b>刘老师点拨：</b>sein 作为行为动词原形，同样要遵循规则放在句尾。" },
+            { t: "在那儿人们以前不允许大声说话。", a: ["Man", "durfte", "dort", "nicht", "laut", "sprechen."], i: "🤫", exp: "<b>刘老师点拨：</b>无人称代词 man 变位同第三人称单数 er，所以用 durfte。这是高频考点！" },
+            { t: "我那时可以帮你。", a: ["Ich", "konnte", "dir", "helfen."], i: "🤝", exp: "<b>刘老师点拨：</b>注意 helfen 是三格动词，所以必须用 dir。konnte 体现过去客观上的能力。" },
+            { t: "你应该问问他。", a: ["Du", "solltest", "ihn", "fragen."], i: "❓", exp: "<b>刘老师点拨：</b>solltest 给出建议。注意 fragen 后接的是四格（ihn）。" },
+            { t: "我们当时想学习德语。", a: ["Wir", "wollten", "Deutsch", "lernen."], i: "🇩🇪", exp: "<b>刘老师点拨：</b>wollten 对应复数 wir。名词 Deutsch 首字母必须大写。" },
+            { t: "昨天我必须做很多事。", a: ["Ich", "musste", "gestern", "viel", "machen."], i: "😫", exp: "<b>刘老师点拨：</b>viel 在这里修饰动作，表示‘很多’。musste 体现了被迫、必须的语境。" },
+            { t: "你以前会说德语吗？", a: ["Konntest", "du", "früher", "Deutsch", "sprechen?"], i: "🗨️", exp: "<b>刘老师点拨：</b>früher 是‘以前’。können 的过去时词干 konnt- 加词尾 -est 变成 konntest。" },
+            { t: "你应该吃点东西。", a: ["Du", "solltest", "etwas", "essen."], i: "🥣", exp: "<b>刘老师点拨：</b>etwas 表示‘一点东西’。solltest 给出的建议让语气更委婉、专业。" },
+            { t: "他以前不能来。", a: ["Er", "konnte", "nicht", "kommen."], i: "❌", exp: "<b>刘老师点拨：</b>记牢：情态动词过去时，第一和第三人称单数（ich/er/sie/es）变位完全一致！" },
+            { t: "我们那时必须快点。", a: ["Wir", "mussten", "schnell", "sein."], i: "⚡", exp: "<b>刘老师点拨：</b>schnell sein 表示‘动作快’。mussten 对应复数 wir。" },
+            { t: "你当时想买什么？", a: ["Was", "wolltest", "du", "kaufen?"], i: "🛍️", exp: "<b>刘老师点拨：</b>典型的 W-Frage。wolltest 对应主语 du，原形 kaufen 甩尾。" },
+            { t: "她那时想当一名医生。", a: ["Sie", "wollte", "Ärztin", "werden."], i: "👩‍⚕️", exp: "<b>刘老师点拨：</b>表示‘成为...’用 werden。注意：德语中女性职业名称要加后缀 -in。" },
+            { t: "那时你不被允许在这里停车。", a: ["Du", "durftest", "hier", "nicht", "parken."], i: "🅿️", exp: "<b>刘老师点拨：</b>表达过去的禁令。dürfen 变位词尾不要漏了 -st。" },
+            { t: "你应该去睡觉。", a: ["Du", "solltest", "schlafen", "gehen."], i: "😴", exp: "<b>刘老师点拨：</b>schlafen gehen 也是一种常见的动词组合，gehen 放在最后。" },
+            { t: "我那时想给你打电话。", a: ["Ich", "wollte", "dich", "anrufen."], i: "📞", exp: "<b>刘老师点拨：</b>anrufen 呼唤某人，接四格宾语 dich。意愿用 wollte 体现。" },
+            { t: "以前你们必须住在这里吗？", a: ["Musstet", "ihr", "früher", "hier", "wohnen?"], i: "🏢", exp: "<b>刘老师点拨：</b>针对你们（ihr）的变位词干加 -tet。früher 这个时间副词习惯放在变位动词后。" }
+        ];
+
+        let quizDB = [...db].sort(() => Math.random() - 0.5);
+        let cur = 0, userSeq = [], isLocked = false;
+
+        function render() {
+            isLocked = false; const q = quizDB[cur]; userSeq = [];
+            document.getElementById('bar').style.width = `${((cur + 1) / quizDB.length) * 100}%`;
+            document.getElementById('num').innerText = `Schritt ${String(cur+1).padStart(2,'0')} / ${quizDB.length}`;
+            document.getElementById('icon').innerText = q.i;
+            document.getElementById('trans').innerText = q.t;
+            document.getElementById('displayArea').innerHTML = "";
+            let tiles = [...q.a].sort(() => Math.random() - 0.5);
+            document.getElementById('optionsArea').innerHTML = tiles.map((w, idx) => 
+                `<button id="t-${idx}" onclick="pick('${w}', ${idx})" class="word-tile">${w.replace(/[.?]/g, '')}</button>`
+            ).join('');
+        }
+
+        function pick(word, idx) {
+            if(isLocked) return;
+            const btn = document.getElementById(`t-${idx}`);
+            if(btn.classList.contains('used')) return;
+            playSound('pop'); btn.classList.add('used'); userSeq.push(word);
+            const span = document.createElement('span');
+            span.className = "word-tile active-pick";
+            span.innerText = word.replace(/[.?]/g, '');
+            document.getElementById('displayArea').appendChild(span);
+            if(userSeq.length === quizDB[cur].a.length) { isLocked = true; setTimeout(check, 400); }
+        }
+
+        function resetCurrent() { if(!isLocked) render(); }
+
+        function check() {
+            const q = quizDB[cur];
+            if(userSeq.join(' ') === q.a.join(' ')) {
+                playSound('win');
+                confetti({ particleCount: 80, spread: 60, origin: { y: 0.7 } });
+                setTimeout(() => {
+                    if(cur < quizDB.length - 1) { cur++; render(); }
+                    else showFinal();
+                }, 3000);
+            } else {
+                playSound('err');
+                showError(q.exp);
+            }
+        }
+
+        function showError(msg) {
+            document.getElementById('modalContent').innerHTML = `
+                <div class="bg-indigo-50 text-indigo-500 px-3 py-1 rounded-lg font-black text-[10px] mb-4 inline-block uppercase tracking-widest">刘老师点拨</div>
+                <div class="text-slate-600 leading-relaxed text-sm mb-8">${msg}</div>
+                <button onclick="closeModal()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black shadow-lg shadow-slate-200">听懂了，重拼</button>
+            `;
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        function closeModal() { document.getElementById('modal').style.display = 'none'; render(); }
+
+        function showFinal() {
+            playSound('win');
+            document.getElementById('modalContent').innerHTML = `
+                <div class="text-center">
+                    <div class="text-5xl mb-6">🎯</div>
+                    <h3 class="text-2xl font-black text-slate-800 mb-2">掌握！情态动词</h3>
+                    <p class="text-slate-400 text-xs leading-relaxed mb-8">
+                        祝贺你！30道难关已全部攻克。无论是客观的过去事实，还是地道的社交建议，你现在的德语已经非常有深度了！
+                    </p>
+                    <button onclick="window.location.href='main.html'" class="w-full py-5 bg-indigo-600 text-white rounded-2xl font-black shadow-xl shadow-indigo-100">确定并返回地图</button>
+                </div>
+            `;
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        window.onload = render;
+    </script>
+</body>
+</html>
