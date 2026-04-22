@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>德语巅峰赛 | 关卡达成</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@700&family=Noto+Sans+SC:wght@400;700;900&display=swap');
+        :root { --primary: #0EA5E9; --accent: #6366F1; --success: #22C55E; }
+        body { background: #F0F9FF; font-family: 'Noto Sans SC', sans-serif; overflow: hidden; height: 100vh; display: flex; flex-direction: column; }
+        
+        /* 呼吸图标 */
+        @keyframes icon-breath {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0px rgba(14,165,233,0)); }
+            50% { transform: scale(1.15); filter: drop-shadow(0 10px 25px rgba(14,165,233,0.3)); }
+        }
+        #icon { display: inline-block; animation: icon-breath 3s ease-in-out infinite; will-change: transform; }
+
+        /* 顶部进度条 */
+        .app-header { background: #FFF; border-bottom: 1px solid #E0F2FE; }
+        .nav-inner { max-width: 500px; margin: 0 auto; padding: 12px 24px; text-align: center; }
+        .top-row { display: flex; justify-content: space-between; align-items: center; width: 100%; }
+        .progress-box { flex: 1; margin: 0 20px; }
+        .progress-track { height: 8px; background: #E0F2FE; border-radius: 10px; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); transition: width 0.6s ease; }
+        .progress-num { font-family: 'JetBrains Mono', monospace; font-size: 11px; font-weight: 800; color: #7DD3FC; margin-top: 4px; }
+        
+        /* 题目卡片 */
+        .lab-card { background: white; border-radius: 35px; padding: 35px 20px; width: 92%; max-width: 450px; border: 2px solid #BAE6FD; box-shadow: 0 15px 30px rgba(14,165,233,0.08); margin: 0 auto; }
+        .sentence-wrap { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 6px; }
+        .word-unit { font-size: 1.3rem; font-weight: 700; color: #0C4A6E; }
+        .blank-slot { display: inline-flex; align-items: center; justify-content: center; min-width: 85px; height: 45px; border-bottom: 4px solid #7DD3FC; font-size: 1.3rem; font-weight: 900; color: var(--accent); }
+        .correct-anim { color: var(--success) !important; border-bottom-color: var(--success) !important; transform: scale(1.1); transition: 0.5s; }
+        
+        /* 选项气泡 */
+        .bubble-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 15px; width: 100%; max-width: 400px; padding: 20px; }
+        @keyframes bubble-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+        .bubble-btn { background: white; border: 2px solid #7DD3FC; color: #0369A1; width: 75px; height: 75px; border-radius: 50%; font-size: 1.05rem; font-weight: 800; display: flex; align-items: center; justify-content: center; box-shadow: 0 6px 0 #BAE6FD; animation: bubble-float 4s ease-in-out infinite; transition: all 0.2s; }
+        .bubble-btn:active { transform: scale(0.9) !important; box-shadow: 0 2px 0 #BAE6FD; }
+
+        /* 弹窗设计 */
+        .modal { position: fixed; inset: 0; background: rgba(8, 47, 73, 0.96); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .modal-box { background: white; border-radius: 32px; width: 100%; max-width: 360px; padding: 32px; text-align: left; position: relative; }
+        .teacher-tag { background: #F0F9FF; color: #0EA5E9; padding: 4px 12px; border-radius: 8px; font-weight: 900; font-size: 12px; margin-bottom: 12px; display: inline-block; }
+        
+        /* 通关大贺词样式 */
+        .win-tag { background: #FFD700; color: #8B4513; padding: 6px 16px; border-radius: 20px; font-weight: 900; font-size: 14px; margin-bottom: 16px; display: inline-block; }
+        .win-title { font-size: 24px; font-weight: 900; color: #1E293B; margin-bottom: 8px; }
+        .win-body { font-size: 16px; color: #64748B; line-height: 1.6; }
+
+        .rocket { position: fixed; bottom: -50px; left: 50%; font-size: 50px; pointer-events: none; z-index: 999; display: none; }
+        @keyframes rocket-fly { 0% { transform: translateY(100vh) scale(1); opacity: 1; } 100% { transform: translateY(-100vh) scale(1.5); opacity: 0; } }
+    </style>
+</head>
+<body>
+
+    <div id="rocket" class="rocket">🚀</div>
+
+    <header class="app-header">
+        <div class="nav-inner">
+            <div class="top-row">
+                <button onclick="window.location.href='main.html'" class="text-sky-300 text-2xl font-bold p-2">✕</button>
+                <div class="progress-box">
+                    <div class="progress-track"><div id="bar" class="progress-fill" style="width: 0%"></div></div>
+                    <div id="num" class="progress-num">01 / 30</div>
+                </div>
+                <button id="muteBtn" onclick="toggleMute()" class="text-sky-300 text-xl w-10">🔊</button>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-1 flex flex-col items-center justify-around py-6 overflow-hidden">
+        <div class="text-center">
+            <div id="icon" class="text-7xl mb-4">👨‍🏫</div>
+            <p id="trans" class="text-lg font-bold text-sky-700 px-6 leading-tight"></p>
+        </div>
+        <div class="lab-card"><div id="sentence" class="sentence-wrap"></div></div>
+        <div id="options" class="bubble-grid"></div>
+    </main>
+
+    <div id="modal" class="modal">
+        <div id="modalContent" class="modal-box">
+            </div>
+    </div>
+
+    <script>
+        const SOUND_URLS = {
+            pop: 'https://assets.mixkit.co/active_storage/sfx/2571/2571-preview.mp3',
+            win: 'https://assets.mixkit.co/active_storage/sfx/1435/1435-preview.mp3',
+            err: 'https://assets.mixkit.co/active_storage/sfx/2572/2572-preview.mp3'
+        };
+
+        let audioCtx, audioBuffers = {}, isMuted = false, audioUnlocked = false;
+        function initAudioEngine() {
+            if (audioUnlocked) return;
+            audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            for (const [key, url] of Object.entries(SOUND_URLS)) {
+                fetch(url).then(r => r.arrayBuffer()).then(ab => audioCtx.decodeAudioData(ab)).then(buf => audioBuffers[key] = buf);
+            }
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            audioUnlocked = true;
+        }
+        function playSound(name) {
+            if (isMuted || !audioBuffers[name]) return;
+            if (audioCtx.state === 'suspended') audioCtx.resume();
+            const source = audioCtx.createBufferSource();
+            source.buffer = audioBuffers[name]; source.connect(audioCtx.destination); source.start(0);
+        }
+        function toggleMute() { isMuted = !isMuted; document.getElementById('muteBtn').innerText = isMuted ? '🔇' : '🔊'; }
+
+        // --- 庆祝效果 ---
+        const celebrations = [
+            () => { confetti({ spread: 360, ticks: 50, gravity: 0, decay: 0.94, startVelocity: 30, shapes: ['star'], colors: ['FFE400', 'FFBD00', 'E89400'], particleCount: 40, scalar: 1.2 }); },
+            () => {
+                const end = Date.now() + 1000;
+                (function frame() {
+                    confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#0EA5E9'] });
+                    confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#6366F1'] });
+                    if (Date.now() < end) requestAnimationFrame(frame);
+                }());
+            },
+            () => {
+                const r = document.getElementById('rocket'); r.style.display = 'block'; r.style.animation = 'rocket-fly 1.5s ease-in forwards';
+                setTimeout(() => { r.style.display = 'none'; r.style.animation = ''; }, 1500);
+            }
+        ];
+
+        // --- 数据库 (已替换“梳头”题) ---
+        const db = [
+            { s: "Du überlegst <slot> das noch mal.", a: ["dir"], t: "你再考虑考虑这件事。", i: "💡", exp: ["<b>替换题点拨：</b><br>‘sich (D.) etwas überlegen’意思是构思或考虑某事。因为有了具体考虑的对象‘das’，所以主语 du 对应的反身代词必须用三格 dir。这是一个非常地道的表达！"] },
+            { s: "Ich freue <slot> auf dich.", a: ["mich"], t: "我期待见到你。", i: "🥰", exp: ["<b>镜像效应：</b><br>主语是 Ich，反身回自己。ich 对应 mich。"] },
+            { s: "Er wäscht <slot> die Hände.", a: ["sich"], t: "他正在洗手。", i: "🧼", exp: ["<b>三四格通用：</b><br>第三人称不管是三格还是四格，统统都用 sich。这是德语最仁慈的地方。"] },
+            { s: "Wir müssen <slot> beeilen.", a: ["uns"], t: "我们必须快点。", i: "🏃", exp: ["<b>固定搭配：</b><br>sich beeilen，主语 wir 对应 uns。"] },
+            { s: "Interessiert ihr <slot> für Kunst?", a: ["euch"], t: "你们对艺术感兴趣吗？", i: "🎨", exp: ["<b>区分你们：</b><br>主语是 ihr，反身代词用 euch。"] },
+            { s: "Ich putze <slot> die Zähne.", a: ["mir"], t: "我刷牙。", i: "🪥", exp: ["<b>身体部位：</b><br>刷的是牙齿，动作落在了具体宾语上，所以 ich 的反身代词降级为三格 mir。"] },
+            { s: "Setzen Sie <slot> , bitte!", a: ["sich"], t: "请坐！", i: "🪑", exp: ["<b>礼貌格式：</b><br>尊称 Sie 的反身代词永远是 sich。"] },
+            { s: "Wie fühlst du <slot> ?", a: ["dich"], t: "你感觉怎么样？", i: "🌡️", exp: ["<b>感官动词：</b><br>sich fühlen，du 对应 dich。"] },
+            { s: "Sie (pl.) treffen <slot> um 8.", a: ["sich"], t: "他们8点见面。", i: "⏰", exp: ["<b>复数三称：</b><br>Sie 复数对应的反身代词是 sich。"] },
+            { s: "Ich ziehe <slot> eine Jacke an.", a: ["mir"], t: "我穿上一件夹克。", i: "🧥", exp: ["<b>穿衣逻辑：</b><br>有具体衣物 Jacke，ich 的反身用三格 mir。"] },
+            { s: "Er erinnert <slot> an den Film.", a: ["sich"], t: "他记得那部电影。", i: "🎞️", exp: ["<b>三单：</b><br>er 对应 sich。"] },
+            { s: "Wir freuen <slot> über die Hilfe.", a: ["uns"], t: "我们很高兴得到帮助。", i: "🎁", exp: ["wir 对应 uns。"] },
+            { s: "Könnt ihr <slot> vorstellen?", a: ["euch"], t: "你们能自我介绍吗？", i: "🤝", exp: ["ihr 对应 euch。"] },
+            { s: "Ich schaue <slot> das Video an.", a: ["mir"], t: "我看这个视频。", i: "📱", exp: ["有宾语 Video，ich 用三格 mir。"] },
+            { s: "Du musst <slot> entspannen.", a: ["dich"], t: "你必须放松。", i: "🧘", exp: ["du 对应 dich。"] },
+            { s: "Sie (sg.) ärgert <slot> sehr.", a: ["sich"], t: "她很生气。", i: "💢", exp: ["三单用 sich。"] },
+            { s: "Wir unterhalten <slot> gut.", a: ["uns"], t: "我们聊得好。", i: "🗣️", exp: ["wir 对应 uns。"] },
+            { s: "Hast du <slot> verletzt?", a: ["dich"], t: "你受伤了吗？", i: "🩹", exp: ["du 对应 dich。"] },
+            { s: "Ich kaufe <slot> ein Brot.", a: ["mir"], t: "我给自己买个面包。", i: "🥖", exp: ["买给某人（三格），买某物（四格）。ich 用 mir。"] },
+            { s: "Er setzt <slot> auf das Sofa.", a: ["sich"], t: "他坐在沙发上。", i: "🛋️", exp: ["三单用 sich。"] },
+            { s: "Zieht <slot> bitte warm an!", a: ["euch"], t: "请穿暖和点！", i: "❄️", exp: ["祈使句针对你们（ihr），反身用 euch。"] },
+            { s: "Ich wünsche <slot> viel Glück.", a: ["mir"], t: "我祝自己好运。", i: "🍀", exp: ["三格反身 mir。"] },
+            { s: "Wir verabschieden <slot> .", a: ["uns"], t: "我们告别了。", i: "👋", exp: ["wir 对应 uns。"] },
+            { s: "Du darfst <slot> nicht verspäten.", a: ["dich"], t: "你不能迟到。", i: "⌚", exp: ["du 对应 dich。"] },
+            { s: "Sie (pl.) streiten <slot> .", a: ["sich"], t: "他们在争吵。", i: "🗯️", exp: ["复三用 sich。"] },
+            { s: "Ich melde <slot> zum Kurs an.", a: ["mich"], t: "我报名课程。", i: "📝", exp: ["ich 对应 mich。"] },
+            { s: "Kannst du <slot> das denken?", a: ["dir"], t: "你能想到那个吗？", i: "🤔", exp: ["有宾语 das，du 用三格 dir。"] },
+            { s: "Er bewirbt <slot> um den Job.", a: ["sich"], t: "他申请工作。", i: "👔", exp: ["三单用 sich。"] },
+            { s: "Wir gewöhnen <slot> an Berlin.", a: ["uns"], t: "我们习惯了柏林。", i: "🏙️", exp: ["wir 对应 uns。"] },
+            { s: "Ich wasche <slot> das Gesicht.", a: ["mir"], t: "我洗脸。", i: "✨", exp: ["有具体部位 Gesicht，ich 用三格 mir。"] }
+        ];
+
+        let quizDB = [...db].sort(() => Math.random() - 0.5);
+        let cur = 0, userAns = [], isLocked = false, finished = false;
+
+        function render() {
+            const q = quizDB[cur]; userAns = []; isLocked = false;
+            document.getElementById('bar').style.width = `${((cur + 1) / quizDB.length) * 100}%`;
+            document.getElementById('num').innerText = `${String(cur+1).padStart(2,'0')} / ${quizDB.length}`;
+            document.getElementById('icon').innerText = q.i;
+            document.getElementById('trans').innerText = q.t;
+            const box = document.getElementById('sentence'); box.innerHTML = "";
+            q.s.split(" ").forEach(w => {
+                if(w.includes("<slot>")) {
+                    const slot = document.createElement('div'); slot.className = "blank-slot"; box.appendChild(slot);
+                } else {
+                    const t = document.createElement('span'); t.className="word-unit"; t.innerText=w; box.appendChild(t);
+                }
+            });
+            updateUI();
+        }
+
+        function updateUI() {
+            const slots = document.querySelectorAll('.blank-slot');
+            slots.forEach((s, i) => { s.innerText = userAns[i] || ""; s.classList.remove('correct-anim'); });
+            const q = quizDB[cur];
+            const seeds = ["mich", "dich", "sich", "uns", "euch", "mir", "dir"];
+            let pool = [...new Set([...q.a, ...seeds.sort(()=>Math.random()-0.5)])].slice(0, 6);
+            document.getElementById('options').innerHTML = pool.sort(()=>Math.random()-0.5).map((w, i) => 
+                `<button class="bubble-btn" style="animation-delay: ${i*0.2}s" onclick="fill('${w}')">${w}</button>`
+            ).join('');
+        }
+
+        function fill(word) {
+            if(isLocked) return;
+            initAudioEngine();
+            const slots = document.querySelectorAll('.blank-slot');
+            if(userAns.length < slots.length) {
+                playSound('pop'); userAns.push(word);
+                slots[userAns.length-1].innerText = word;
+                if(userAns.length === slots.length) setTimeout(check, 250);
+            }
+        }
+
+        function check() {
+            isLocked = true; const q = quizDB[cur]; let errHtml = "";
+            userAns.forEach((v, i) => { if(v !== q.a[i]) { errHtml += `<div class="leading-relaxed text-slate-600">${q.exp[i] || q.exp[0]}</div>`; } });
+
+            if(errHtml === "") {
+                playSound('win');
+                celebrations[Math.floor(Math.random() * celebrations.length)]();
+                document.querySelectorAll('.blank-slot').forEach(s => s.classList.add('correct-anim'));
+                setTimeout(() => { if(cur < quizDB.length - 1) { cur++; render(); } else showFinal(); }, 3000);
+            } else {
+                playSound('err');
+                document.getElementById('modalContent').innerHTML = `
+                    <span class="teacher-tag">刘老师点拨</span>
+                    <div class="mb-4">${errHtml}</div>
+                    <button onclick="closeModal()" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-bold shadow-lg shadow-indigo-100">听懂了，重做</button>
+                `;
+                document.getElementById('modal').style.display = 'flex';
+            }
+        }
+
+        function showFinal() {
+            finished = true; playSound('win');
+            // 全屏撒花
+            const end = Date.now() + 2000;
+            (function frame() {
+                confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0, y: 0.5 } });
+                confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1, y: 0.5 } });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+
+            document.getElementById('modalContent').innerHTML = `
+                <div class="text-center">
+                    <div class="win-tag">CONGRATULATIONS</div>
+                    <div class="win-title">反身动词 · 完美收官</div>
+                    <div class="win-body mt-4">
+                        太棒了！你已经精准掌握了德语中最棘手的反身代词逻辑。无论是生活洗漱还是高级思考，你都游刃有余。
+                    </div>
+                    <button onclick="window.location.href='main.html'" class="w-full mt-8 py-5 bg-yellow-400 text-yellow-900 rounded-2xl font-black shadow-xl border-b-4 border-yellow-600 active:border-b-0 active:translate-y-1 transition-all">
+                        确定
+                    </button>
+                </div>
+            `;
+            document.getElementById('modal').style.display = 'flex';
+        }
+
+        function closeModal() { 
+            document.getElementById('modal').style.display = 'none'; isLocked = false; userAns = []; updateUI(); 
+        }
+
+        window.onload = render;
+    </script>
+</body>
+</html>
