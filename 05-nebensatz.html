@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>从句超级实验室 - 刘老师精编版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&display=swap');
+        html, body { height: 100vh; width: 100vw; margin: 0; padding: 0; overflow: hidden; background: #F8FAFC; font-family: 'Noto Sans SC', sans-serif; }
+        body { display: flex; flex-direction: column; align-items: center; }
+        
+        .app-container { width: 100%; max-width: 800px; height: 100%; display: flex; flex-direction: column; background: white; box-shadow: 0 0 50px rgba(0,0,0,0.03); }
+
+        .progress-fill { height: 100%; background: #6366F1; transition: width 0.4s; }
+        .breathe-emoji { font-size: clamp(2rem, 8vh, 3.5rem); animation: breathing 3s ease-in-out infinite; margin-bottom: 10px; }
+        @keyframes breathing { 0%, 100% { transform: scale(1); opacity: 0.8; } 50% { transform: scale(1.1); opacity: 1; } }
+
+        .content-wrapper { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 20px; text-align: center; }
+        .sentence-box { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; width: 100%; margin-top: 15px; }
+        
+        .word-slot { 
+            min-width: 80px; height: clamp(50px, 7vh, 65px); border: 2px dashed #CBD5E1; border-radius: 15px; 
+            display: flex; align-items: center; justify-content: center;
+            font-weight: 900; color: #6366F1; font-size: clamp(1rem, 2.5vh, 1.3rem); padding: 0 15px;
+            background: rgba(248,250,252,0.5); transition: all 0.2s;
+        }
+        .word-slot.filled { border-style: solid; background: white; border-color: #6366F1; }
+        .word-slot.correct { background: #DCFCE7 !important; border-color: #22C55E !important; color: #166534 !important; }
+
+        .bottom-nav {
+            flex-none; background: #F1F5F9; border-top: 1px solid #E2E8F0;
+            padding: 20px 20px calc(25px + env(safe-area-inset-bottom));
+            border-radius: 40px 40px 0 0;
+        }
+        .chip-grid { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; max-width: 550px; margin: 0 auto 15px; }
+        
+        .chip { 
+            background: white; border: 2px solid #E2E8F0; border-bottom: 5px solid #CBD5E1;
+            padding: 12px 20px; border-radius: 18px; font-weight: 900; cursor: pointer;
+            transition: all 0.1s; color: #334155; font-size: clamp(0.9rem, 2.2vh, 1.2rem);
+        }
+        .chip:active { transform: translateY(3px); border-bottom-width: 2px; }
+        .chip.used { opacity: 0.1; pointer-events: none; }
+
+        .undo-btn { 
+            margin-bottom: 15px; font-size: 13px; font-weight: 900; color: #64748B;
+            display: flex; align-items: center; gap: 5px; cursor: pointer;
+            padding: 8px 16px; border-radius: 20px; background: white; border: 1px solid #E2E8F0;
+        }
+
+        .modal { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+        .box-style { background: white; border-radius: 30px; width: 100%; max-width: 450px; padding: 35px; text-align: center; }
+        .hl-blue { color: #6366F1; font-weight: 900; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header class="bg-white p-4 border-b flex-none">
+            <div class="flex items-center justify-between">
+                <button onclick="location.href='main.html'" class="w-10 h-10 flex items-center justify-center rounded-full bg-slate-50">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="3"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
+                <div class="flex-1 mx-6">
+                    <div class="h-2 bg-slate-100 rounded-full overflow-hidden mb-1"><div id="bar" class="progress-fill" style="width: 0%"></div></div>
+                    <div class="flex justify-between items-center">
+                        <span id="num" class="text-[11px] font-black text-indigo-400 tracking-widest">01 / 30</span>
+                        <span class="text-[11px] font-black text-slate-400 tracking-widest">ZIEL</span>
+                    </div>
+                </div>
+                <div class="w-10"></div>
+            </div>
+        </header>
+
+        <main class="content-wrapper">
+            <div id="emojiContainer" class="breathe-emoji"></div>
+            <h2 id="trans" class="text-xl md:text-2xl font-black text-slate-800 mb-4 px-4"></h2>
+            <div id="fixedPart" class="text-base md:text-lg font-bold text-indigo-600 bg-indigo-50 px-6 py-3 rounded-2xl border-2 border-indigo-100 mb-4 inline-block"></div>
+            <div id="sentenceBox" class="sentence-box"></div>
+        </main>
+
+        <footer class="bottom-nav">
+            <div class="flex justify-center">
+                <div onclick="undoLast()" class="undo-btn shadow-sm active:bg-slate-50">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M9 14L4 9l5-5"/><path d="M4 9h12a5 5 0 0 1 0 10H7"/></svg>
+                    撤回一步
+                </div>
+            </div>
+            <div id="optionsArea" class="chip-grid"></div>
+            <p class="text-center text-[10px] font-bold text-slate-400 tracking-widest uppercase">点击单词 · 严谨组装语序</p>
+        </footer>
+    </div>
+
+    <div id="errorModal" class="modal">
+        <div class="box-style" style="border-top:12px solid #EF4444">
+            <div class="text-4xl mb-3">👨‍🏫</div>
+            <h3 class="text-xl font-black text-slate-900 mb-4">刘老师语序诊断报告</h3>
+            <div id="errorFeedback" class="text-slate-600 mb-8 text-left space-y-3 px-2 border-l-2 border-slate-100 pl-4"></div>
+            <button onclick="closeError()" class="w-full py-4 bg-slate-900 text-white rounded-xl font-black shadow-lg">立即修正</button>
+        </div>
+    </div>
+
+    <div id="winModal" class="modal">
+        <div class="box-style" style="border-top:12px solid #6366F1">
+            <div class="text-6xl mb-4">🏆</div>
+            <h3 class="text-2xl font-black text-slate-900 mb-2">语法大师！</h3>
+            <p class="text-slate-500 mb-8">刘老师：30道基础从句练习完成！<br>语序逻辑已经非常扎实了。</p>
+            <button onclick="location.href='main.html'" class="w-full py-4 bg-indigo-600 text-white rounded-xl font-black">完成挑战</button>
+        </div>
+    </div>
+
+    <script>
+        const db = [
+            // Weil (由于字数限制，此处展示部分精修示例，代码中已包含逻辑补全)
+            { t: "我不吃晚饭了，因为我不饿。", fixed: "Ich esse nichts,", slots: ["weil", "ich", "keinen", "Hunger", "habe"], conj: "weil", verb: "habe", e: "🍽️" },
+            { t: "他今天没来，因为他生病了。", fixed: "Er ist heute nicht da,", slots: ["weil", "er", "leider", "krank", "ist"], conj: "weil", verb: "ist", e: "🤒" },
+            { t: "她很开心，因为她考过了试。", fixed: "Sie ist sehr froh,", slots: ["weil", "sie", "die Prüfung", "bestanden", "hat"], conj: "weil", verb: "hat", e: "🥳" },
+            { t: "我多运动，是为了保持身材。", fixed: "Ich mache viel Sport,", slots: ["weil", "ich", "fit", "bleiben", "möchte"], conj: "weil", verb: "möchte", e: "🏃" },
+            { t: "他迟到了，因为堵车很严重。", fixed: "Er kommt zu spät,", slots: ["weil", "es", "einen", "Stau", "gibt"], conj: "weil", verb: "gibt", e: "🚗" },
+            { t: "我不买这件衬衫，因为太贵了。", fixed: "Ich kaufe das Hemd nicht,", slots: ["weil", "es", "mir", "zu teuer", "ist"], conj: "weil", verb: "ist", e: "💰" },
+            { t: "她今天没空，因为她要加班。", fixed: "Sie hat keine Zeit,", slots: ["weil", "sie", "heute", "Überstunden", "macht"], conj: "weil", verb: "macht", e: "💼" },
+            { t: "我们没去远足，因为天气太差。", fixed: "Wir wandern nicht,", slots: ["weil", "das Wetter", "wirklich", "schlecht", "ist"], conj: "weil", verb: "ist", e: "🌧️" },
+            // Dass
+            { t: "我觉得，德语语法很有趣。", fixed: "Ich finde,", slots: ["dass", "die deutsche Grammatik", "interessant", "ist"], conj: "dass", verb: "ist", e: "📖" },
+            { t: "他认为，这件事并不难。", fixed: "Er glaubt,", slots: ["dass", "das", "gar nicht", "schwer", "ist"], conj: "dass", verb: "ist", e: "💡" },
+            { t: "我希望，你明天能来。", fixed: "Ich hoffe,", slots: ["dass", "du", "morgen", "kommen", "kannst"], conj: "dass", verb: "kannst", e: "🍀" },
+            { t: "太遗憾了，他没考过考试。", fixed: "Es ist schade,", slots: ["dass", "er", "die Prüfung", "nicht", "geschafft", "hat"], conj: "dass", verb: "hat", e: "😔" },
+            { t: "大家都知道，他住在柏林。", fixed: "Alle wissen,", slots: ["dass", "er", "in Berlin", "wohnt"], conj: "dass", verb: "wohnt", e: "🏙️" },
+            { t: "我认为，你应该多休息。", fixed: "Ich meine,", slots: ["dass", "du", "jetzt", "eine Pause", "brauchst"], conj: "dass", verb: "brauchst", e: "🛌" },
+            { t: "他向我保证，他会准时到。", fixed: "Er verspricht mir,", slots: ["dass", "er", "pünktlich", "da", "ist"], conj: "dass", verb: "ist", e: "⌚" },
+            { t: "很高兴，你一切都好。", fixed: "Ich freue mich,", slots: ["dass es", "dir", "gut", "geht"], conj: "dass", verb: "geht", e: "😊" },
+            // Ob
+            { t: "我想知道，你明天是否有空。", fixed: "Ich möchte wissen,", slots: ["ob", "du", "morgen", "Zeit", "hast"], conj: "ob", verb: "hast", e: "❓" },
+            { t: "他问，是否可以在这里停车。", fixed: "Er fragt,", slots: ["ob", "man", "hier", "parken", "darf"], conj: "ob", verb: "darf", e: "🅿️" },
+            { t: "我不确定，他是否认识我。", fixed: "Ich bin unsicher,", slots: ["ob", "er", "mich", "überhaupt", "kennt"], conj: "ob", verb: "kennt", e: "🧐" },
+            { t: "请问，您是否已收到邮件？", fixed: "Sagen Sie mir bitte,", slots: ["ob", "Sie", "die Mail", "bekommen", "haben"], conj: "ob", verb: "haben", e: "📧" },
+            { t: "我不知道，他是否已结婚。", fixed: "Ich weiß nicht,", slots: ["ob", "er", "schon", "verheiratet", "ist"], conj: "ob", verb: "ist", e: "💍" },
+            { t: "你能告诉我，电影是否开始了？", fixed: "Weißt du,", slots: ["ob", "der Film", "schon", "begonnen", "hat"], conj: "ob", verb: "hat", e: "🎬" },
+            { t: "医生问，我是否还在头疼。", fixed: "Der Arzt fragt,", slots: ["ob", "ich", "noch", "Kopfschmerzen", "habe"], conj: "ob", verb: "habe", e: "🏥" },
+            // Wenn (带倒装练习)
+            { t: "如果你有空，我们就去喝咖啡。", fixed: "Wenn du Zeit hast,", slots: ["gehen", "wir", "einen Kaffee", "trinken"], conj: "gehen", isReverse: true, e: "☕" },
+            { t: "如果明天天气好，我就去游泳。", fixed: "Wenn das Wetter morgen gut ist,", slots: ["gehe", "ich", "ins", "Schwimmbad"], conj: "gehe", isReverse: true, e: "🏊" },
+            { t: "如果你生病了，就得吃药。", fixed: "Wenn du krank bist,", slots: ["musst", "du", "die Tabletten", "nehmen"], conj: "musst", isReverse: true, e: "💊" },
+            { t: "如果你想学好德语，就得每天练习。", fixed: "Wenn du Deutsch lernen willst,", slots: ["musst", "du", "jeden Tag", "üben"], conj: "musst", isReverse: true, e: "✍️" },
+            { t: "如果你饿了，冰箱里有吃的。", fixed: "Wenn du Hunger hast,", slots: ["gibt", "es", "Essen", "im Kühlschrank"], conj: "gibt", isReverse: true, e: "🍏" },
+            { t: "如果你累了，就早点休息吧。", fixed: "Wenn du müde bist,", slots: ["solltest", "du", "früher", "schlafen", "gehen"], conj: "solltest", isReverse: true, e: "💤" },
+            { t: "如果你去超市，帮我买个面包。", fixed: "Wenn du zum Supermarkt gehst,", slots: ["kaufe", "mir", "bitte", "ein", "Brot"], conj: "kaufe", isReverse: true, e: "🥖" }
+        ];
+
+        let cur = 0, userAns = [], gameList = [], historyIndices = [];
+
+        function init() {
+            gameList = [...db].sort(() => Math.random() - 0.5).slice(0, 30);
+            renderLevel();
+        }
+
+        function renderLevel() {
+            const q = gameList[cur];
+            userAns = []; historyIndices = [];
+            document.getElementById('bar').style.width = `${(cur/gameList.length)*100}%`;
+            document.getElementById('num').innerText = `${String(cur+1).padStart(2,'0')} / ${gameList.length}`;
+            document.getElementById('trans').innerText = q.t;
+            document.getElementById('fixedPart').innerText = q.fixed;
+            document.getElementById('emojiContainer').innerText = q.e;
+            
+            const box = document.getElementById('sentenceBox'); box.innerHTML = "";
+            q.slots.forEach((_, i) => {
+                const slot = document.createElement('div'); slot.className = 'word-slot';
+                slot.id = `slot-${i}`; slot.innerHTML = "&nbsp;"; box.appendChild(slot);
+            });
+
+            const area = document.getElementById('optionsArea'); area.innerHTML = "";
+            [...q.slots].sort(() => Math.random() - 0.5).forEach((word, idx) => {
+                const chip = document.createElement('div'); chip.className = 'chip';
+                chip.id = `chip-${idx}`; chip.innerText = word;
+                chip.onclick = () => selectWord(word, `chip-${idx}`); area.appendChild(chip);
+            });
+        }
+
+        function selectWord(word, chipId) {
+            const q = gameList[cur];
+            if (userAns.length < q.slots.length) {
+                const idx = userAns.length;
+                userAns.push(word); historyIndices.push(chipId);
+                document.getElementById(chipId).classList.add('used');
+                const slot = document.getElementById(`slot-${idx}`);
+                slot.innerText = word; slot.classList.add('filled');
+                if (userAns.length === q.slots.length) setTimeout(check, 300);
+            }
+        }
+
+        function undoLast() {
+            if (userAns.length > 0) {
+                const lastIdx = userAns.length - 1;
+                const lastChipId = historyIndices.pop(); userAns.pop();
+                document.getElementById(lastChipId).classList.remove('used');
+                const slot = document.getElementById(`slot-${lastIdx}`);
+                slot.innerText = ""; slot.classList.remove('filled');
+            }
+        }
+
+        function check() {
+            const q = gameList[cur];
+            const isRight = JSON.stringify(userAns) === JSON.stringify(q.slots);
+            if (isRight) {
+                document.querySelectorAll('.word-slot').forEach(s => s.classList.add('correct'));
+                confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
+                // 这里精准控制为 3000 毫秒（3秒）
+                setTimeout(() => { 
+                    cur++; 
+                    if (cur < gameList.length) renderLevel(); 
+                    else document.getElementById('winModal').style.display = 'flex'; 
+                }, 3000);
+            } else {
+                let errors = [];
+                const first = userAns[0];
+                const last = userAns[userAns.length-1];
+
+                if (q.isReverse) {
+                    if (first !== q.conj) errors.push(`<li>❌ <b class='text-red-500'>主句开头错误</b>：Wenn 从句在前时，逗号后主句必须立即接动词 <span class='hl-blue'>${q.conj}</span>。</li>`);
+                } else {
+                    if (first !== q.conj) errors.push(`<li>❌ <b class='text-red-500'>从句引导错误</b>：连词 <span class='hl-blue'>${q.conj}</span> 必须放在从句开头。</li>`);
+                    if (last !== q.verb && !q.isReverse) errors.push(`<li>❌ <b class='text-red-500'>框形结构错误</b>：变位动词 <span class='hl-blue'>${q.slots[q.slots.length-1]}</span> 必须踢到句末。</li>`);
+                }
+                
+                if (errors.length === 0) errors.push(`<li>❌ <b class='text-red-500'>细节排布错误</b>：虽然头尾对了，但中间的成分（状语/宾语）顺序需要调整。</li>`);
+
+                document.getElementById('errorFeedback').innerHTML = `<ul class='space-y-3'>${errors.join('')}</ul>`;
+                document.getElementById('errorModal').style.display = 'flex';
+            }
+        }
+
+        function closeError() { document.getElementById('errorModal').style.display = 'none'; renderLevel(); }
+        init();
+    </script>
+</body>
+</html>
