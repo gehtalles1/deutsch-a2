@@ -73,13 +73,13 @@
         </header>
 
         <main class="grid grid-cols-2 gap-4">
-            <div onclick="go('01-Praeteritum')" class="a2-card p-5 flex flex-col items-center text-center">
+            <div onclick="go('01-Praeteritum')" class="a2-card p-5 flex flex-col items-center text-center card-active">
                 <div class="w-12 h-12 bg-[#6366F1] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-lg shadow-indigo-100">1</div>
                 <h3 class="text-sm font-black text-slate-800">过去时先锋营</h3>
                 <p class="text-[9px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Präteritum</p>
             </div>
             
-            <div onclick="go('02-Reflexive-Verben')" class="a2-card p-5 flex flex-col items-center text-center">
+            <div onclick="go('02-Reflexive-Verben')" class="a2-card p-5 flex flex-col items-center text-center card-active">
                 <div class="w-12 h-12 bg-[#818CF8] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-lg shadow-indigo-100">2</div>
                 <h3 class="text-sm font-black text-slate-800">反身动词镜像馆</h3>
                 <p class="text-[9px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Reflexive Verben</p>
@@ -102,6 +102,12 @@
                 <h3 class="text-sm font-black text-slate-800">从句实验室</h3>
                 <p class="text-[9px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Nebensätze</p>
             </div>
+
+            <div onclick="go('06-komsuper-adj')" class="a2-card p-5 flex flex-col items-center text-center card-active">
+                <div class="w-12 h-12 bg-[#EEF2FF] rounded-2xl flex items-center justify-center text-indigo-500 font-black text-xl mb-3 shadow-lg shadow-indigo-50 border border-indigo-100">6</div>
+                <h3 class="text-sm font-black text-slate-800">比较最高级适配</h3>
+                <p class="text-[9px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Komperativ & Superlativ</p>
+            </div>
         </main>
 
         <footer class="mt-12 text-center pb-10">
@@ -112,11 +118,9 @@
     </div>
 
     <script>
-        // 跳转函数
         function go(name) { 
             window.location.href = name + ".html"; 
         }
-        // 禁用右键菜单，保护课件
         document.oncontextmenu = () => false;
     </script>
 </body>
