@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>德语词尾迷宫 - 刘老师精编</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&display=swap');
+        
+        html, body { height: 100vh; width: 100vw; margin: 0; padding: 0; overflow: hidden; background: #F8FAFC; font-family: 'Noto Sans SC', sans-serif; }
+        .app-container { width: 100%; max-width: 500px; height: 100%; margin: 0 auto; display: flex; flex-direction: column; background: white; }
+
+        /* 极致丝滑呼吸 */
+        @keyframes silkyBreathe {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 4px 6px rgba(99,102,241,0.1)); }
+            50% { transform: scale(1.1); filter: drop-shadow(0 15px 25px rgba(99, 102, 241, 0.4)); }
+        }
+        .breathe-icon { animation: silkyBreathe 4s ease-in-out infinite; will-change: transform; display: inline-block; }
+
+        .progress-fill { height: 100%; background: #6366F1; transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        
+        /* 紧凑对齐逻辑 */
+        .sentence-display { 
+            font-size: clamp(1.4rem, 4.2vh, 1.9rem); font-weight: 800; color: #1E293B; 
+            line-height: 2.2; margin-bottom: 12px; display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline;
+        }
+
+        .adj-group { display: inline-flex; align-items: baseline; }
+        .blank-slot { 
+            display: inline-flex; align-items: center; justify-content: center;
+            min-width: 44px; border-bottom: 5px solid #6366F1; 
+            margin-left: 1px; margin-right: 12px; /* 紧贴词根，远离名词 */
+            color: #6366F1; font-weight: 900; height: 1.2em; position: relative;
+        }
+        .blank-slot.correct { color: #22C55E; border-bottom-color: #22C55E; }
+
+        .translation-text { font-size: 1.4rem; font-weight: 700; color: #64748B; margin-top: 10px; padding: 0 25px; }
+
+        /* 3+2 大厂布局 */
+        .bottom-nav { flex: none; background: #F8FAFC; border-top: 1px solid #E2E8F0; padding: 25px 20px calc(30px + env(safe-area-inset-bottom)); border-radius: 40px 40px 0 0; }
+        .chip-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 14px; max-width: 400px; margin: 0 auto; }
+        .chip { 
+            grid-column: span 2; background: white; border: 2px solid #E2E8F0; border-bottom: 6px solid #CBD5E1; 
+            padding: 15px 0; border-radius: 22px; font-weight: 900; cursor: pointer; transition: all 0.1s; font-size: 1.5rem; text-align: center; color: #334155;
+        }
+        .chip:nth-child(4) { grid-column: 2 / span 2; }
+        .chip:nth-child(5) { grid-column: 4 / span 2; }
+        .chip:active { transform: translateY(4px); border-bottom-width: 2px; }
+
+        .modal { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.97); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header class="bg-white p-4 border-b flex-none">
+            <div class="flex items-center justify-between">
+                <button onclick="location.href='index.html'" class="w-10 h-10 flex items-center justify-center rounded-full bg-slate-50"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="3"><path d="M15 18l-6-6 6-6"/></svg></button>
+                <div class="flex-1 mx-6">
+                    <div class="h-2.5 bg-slate-100 rounded-full overflow-hidden mb-1"><div id="bar" class="progress-fill" style="width: 0%"></div></div>
+                    <div class="flex justify-between items-center"><span id="num" class="text-[12px] font-black text-indigo-500">01 / 30</span><span class="text-[12px] font-black text-slate-400 tracking-widest">ZIEL</span></div>
+                </div><div class="w-10"></div>
+            </div>
+        </header>
+
+        <main class="flex-1 flex flex-col items-center justify-center p-4 text-center">
+            <div id="emoji" class="text-7xl mb-8 breathe-icon">🎨</div>
+            <div id="sentence" class="sentence-display"></div>
+            <div id="translation" class="translation-text"></div>
+        </main>
+
+        <footer class="bottom-nav">
+            <div id="options" class="chip-grid"></div>
+            <p class="text-center text-[11px] font-bold text-slate-400 tracking-[0.2em] mt-8 uppercase">点击选择词尾 · 形成德语肌肉记忆</p>
+        </footer>
+    </div>
+
+    <div id="errorModal" class="modal">
+        <div class="bg-white rounded-[40px] w-full max-w-sm p-8 text-center border-t-[12px] border-red-500 shadow-2xl">
+            <div class="text-5xl mb-4">👨‍🏫</div>
+            <h3 class="text-2xl font-black text-slate-900 mb-4">诊断报告</h3>
+            <div id="errorFeedback" class="text-left space-y-4 mb-8 text-slate-700 font-medium"></div>
+            <button onclick="closeError()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-lg">纠正思维</button>
+        </div>
+    </div>
+
+    <div id="winModal" class="modal">
+        <div class="bg-white rounded-[40px] w-full max-w-sm p-10 text-center border-t-[12px] border-indigo-600">
+            <div class="text-7xl mb-6">👑</div>
+            <h3 class="text-2xl font-black text-slate-900 mb-3">顶级语感！</h3>
+            <p class="text-slate-500 mb-10 font-bold leading-relaxed">刘老师：30道变态级练习全过！<br>你已经彻底降服了形容词词尾变化。</p>
+            <button onclick="location.href='index.html'" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black">返回地图</button>
+        </div>
+    </div>
+
+    <script>
+        const questDB = [
+            // 替换掉原来的 Guten Tag，改为强变化经典练习
+            { s: ["Er hat groß", " Durst."], ans: "en", type: "强变化", kas: "Akk.", gen: "Mask.", art: "无冠词", t: "他口渴得很厉害。", e: "🥛" },
+            { s: ["Hast du ein kalt", " Bier?"], ans: "es", type: "混合变化", kas: "Akk.", gen: "Neut.", art: "不定冠词", t: "你有凉啤酒吗？", e: "🍺" },
+            { s: ["Möchten Sie den rot", " Wein?"], ans: "en", type: "弱变化", kas: "Akk.", gen: "Mask.", art: "定冠词", t: "您想要这瓶红酒吗？", e: "🍷" },
+            { s: ["Kalt", " Wasser ist gesund."], ans: "es", type: "强变化", kas: "Nom.", gen: "Neut.", art: "无冠词", t: "凉水很健康。", e: "💧" },
+            { s: ["Der alt", " Mann kauft Brot."], ans: "e", type: "弱变化", kas: "Nom.", gen: "Mask.", art: "定冠词", t: "那位老先生买面包。", e: "👴" },
+            { s: ["Wo ist meine neu", " Brille?"], ans: "e", type: "混合变化", kas: "Nom.", gen: "Fem.", art: "物主代词", t: "我的新眼镜在哪？", e: "👓" },
+            { s: ["Ich brauche ein groß", " Haus."], ans: "es", type: "混合变化", kas: "Akk.", gen: "Neut.", art: "不定冠词", t: "我需要一个大房子。", e: "🏠" },
+            { s: ["Siehst du den klein", " Vogel?"], ans: "en", type: "弱变化", kas: "Akk.", gen: "Mask.", art: "定冠词", t: "你看到那只小鸟了吗？", e: "🐦" },
+            { s: ["Ein gut", " Freund hilft immer."], ans: "er", type: "混合变化", kas: "Nom.", gen: "Mask.", art: "不定冠词", t: "一个好朋友总是会帮忙。", e: "👬" },
+            { s: ["Die teuer", " Kamera ist kaputt."], ans: "e", type: "弱变化", kas: "Nom.", gen: "Fem.", art: "定冠词", t: "那个昂贵的相机坏了。", e: "📷" },
+            { s: ["Er trinkt gern heiß", " Kaffee."], ans: "en", type: "强变化", kas: "Akk.", gen: "Mask.", art: "无冠词", t: "他喜欢喝热咖啡。", e: "☕" },
+            { s: ["Wir besuchen die alt", " Stadt."], ans: "e", type: "弱变化", kas: "Akk.", gen: "Fem.", art: "定冠词", t: "我们游览这个古老的城市。", e: "🏰" },
+            { s: ["Hast du kein", " Hunger?"], ans: "en", type: "混合变化", kas: "Akk.", gen: "Mask.", art: "否定词", t: "你不饿吗？", e: "😋" },
+            { s: ["Das ist ein schick", " Kleid."], ans: "es", type: "混合变化", kas: "Nom.", gen: "Neut.", art: "不定冠词", t: "这是一件时髦的裙子。", e: "👗" },
+            { s: ["Mit freundlich", " Grüßen."], ans: "en", type: "强变化", kas: "Dat.", gen: "Plur.", art: "无冠词", t: "致以友好的问候。", e: "✉️" },
+            { s: ["Frisch", " Milch schmeckt gut."], ans: "e", type: "强变化", kas: "Nom.", gen: "Fem.", art: "无冠词", t: "新鲜牛奶好喝。", e: "🥛" },
+            { s: ["Das ist mein best", " Freund."], ans: "er", type: "混合变化", kas: "Nom.", gen: "Mask.", art: "物主代词", t: "这是我最好的朋友。", e: "🏆" },
+            { s: ["Suchen Sie ein ruhig", " Zimmer?"], ans: "es", type: "混合变化", kas: "Akk.", gen: "Neut.", art: "不定冠词", t: "您在寻找一个安静的房间吗？", e: "🛌" },
+            { s: ["Ich liebe italienisch", " Essen."], ans: "es", type: "强变化", kas: "Akk.", gen: "Neut.", art: "无冠词", t: "我爱意大利菜。", e: "🍝" },
+            { s: ["Die klein", " Kinder spielen."], ans: "en", type: "弱变化", kas: "Nom.", gen: "Plur.", art: "定冠词", t: "那些小孩在玩耍。", e: "👶" },
+            { s: ["Kaufst du die süß", " Äpfel?"], ans: "en", type: "弱变化", kas: "Akk.", gen: "Plur.", art: "定冠词", t: "你买那些甜苹果吗？", e: "🍎" },
+            { s: ["Er hat ein dunkel", " Hemd."], ans: "es", type: "混合变化", kas: "Akk.", gen: "Neut.", art: "不定冠词", t: "他有一件深色衬衫。", e: "👔" },
+            { s: ["Das ist eine schön", " Frau."], ans: "e", type: "混合变化", kas: "Nom.", gen: "Fem.", art: "不定冠词", t: "这是一位漂亮的女士。", e: "👩" },
+            { s: ["Wir essen an einem rund", " Tisch."], ans: "en", type: "混合变化", kas: "Dat.", gen: "Mask.", art: "不定冠词", t: "我们在一个圆桌旁吃饭。", e: "🍽️" },
+            { s: ["Lecker", " Kuchen für alle!"], ans: "er", type: "强变化", kas: "Nom.", gen: "Mask.", art: "无冠词", t: "给大家美味的蛋糕！", e: "🍰" },
+            { s: ["Haben Sie ein groß", " Auto?"], ans: "es", type: "混合变化", kas: "Akk.", gen: "Neut.", art: "不定冠词", t: "您有一辆大车吗？", e: "🚗" },
+            { s: ["Der neu", " Film ist lang."], ans: "e", type: "弱变化", kas: "Nom.", gen: "Mask.", art: "定冠词", t: "这部新电影很长。", e: "🎬" },
+            { s: ["Ich sehe ein klein", " Kind."], ans: "es", type: "混合变化", kas: "Akk.", gen: "Neut.", art: "不定冠词", t: "我看到一个小孩。", e: "🚶" },
+            { s: ["Gibt es hier frisch", " Brot?"], ans: "es", type: "强变化", kas: "Akk.", gen: "Neut.", art: "无冠词", t: "这儿有新鲜面包吗？", e: "🥖" },
+            { s: ["Die nett", " Lehrerin hilft uns."], ans: "e", type: "弱变化", kas: "Nom.", gen: "Fem.", art: "定冠词", t: "那位友善的女老师帮助我们。", e: "👩‍🏫" }
+        ];
+
+        let cur = 0, gameList = [];
+        const options = ["e", "en", "er", "es", "em"];
+
+        function init() {
+            gameList = [...questDB].sort(() => Math.random() - 0.5).slice(0, 30);
+            renderLevel();
+        }
+
+        function renderLevel() {
+            const q = gameList[cur];
+            document.getElementById('bar').style.width = `${(cur/gameList.length)*100}%`;
+            document.getElementById('num').innerText = `${String(cur+1).padStart(2,'0')} / ${gameList.length}`;
+            document.getElementById('emoji').innerText = q.e;
+            document.getElementById('translation').innerText = q.t;
+            
+            // 安全渲染
+            document.getElementById('sentence').innerHTML = `
+                <div class="adj-group">
+                    <span>${q.s[0]}</span>
+                    <span id="blank" class="blank-slot">&nbsp;</span>
+                </div>
+                <span>${q.s[1] || ''}</span>
+            `;
+
+            const optArea = document.getElementById('options');
+            optArea.innerHTML = "";
+            options.forEach(opt => {
+                const btn = document.createElement('div');
+                btn.className = 'chip'; btn.innerText = `-${opt}`;
+                btn.onclick = () => check(opt);
+                optArea.appendChild(btn);
+            });
+        }
+
+        function triggerWinEffect() {
+            const end = Date.now() + 800;
+            const colors = ['#6366F1', '#22C55E', '#F59E0B'];
+            (function frame() {
+                confetti({ particleCount: 4, angle: 60, spread: 55, origin: { x: 0 }, colors: colors });
+                confetti({ particleCount: 4, angle: 120, spread: 55, origin: { x: 1 }, colors: colors });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+        }
+
+        function check(userChoice) {
+            const q = gameList[cur];
+            const blank = document.getElementById('blank');
+            blank.innerText = userChoice;
+
+            if (userChoice === q.ans) {
+                blank.classList.add('correct');
+                triggerWinEffect();
+                setTimeout(() => {
+                    cur++;
+                    if (cur < gameList.length) renderLevel();
+                    else document.getElementById('winModal').style.display = 'flex';
+                }, 3000);
+            } else {
+                const fb = document.getElementById('errorFeedback');
+                fb.innerHTML = `
+                    <div class="bg-red-50 p-4 rounded-2xl">
+                        <p class="text-sm font-bold text-red-500 mb-1">❌ 你的选择：-${userChoice}</p>
+                        <p class="text-xl font-black text-green-600">✅ 刘老师正确示范：-${q.ans}</p>
+                    </div>
+                    <div class="space-y-1">
+                        <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">语法拆解</p>
+                        <p class="text-sm">1. 冠词类型：<b>${q.art}</b> → 对应 <b>${q.type}</b> 规则。</p>
+                        <p class="text-sm">2. 名词属性：<b>${q.gen}</b> | 句中格位：<b>${q.kas}</b>。</p>
+                        <p class="text-sm">3. 结论：根据语法表，此处必须填入词尾 <b class="text-indigo-600">-${q.ans}</b>。</p>
+                    </div>
+                `;
+                document.getElementById('errorModal').style.display = 'flex';
+            }
+        }
+
+        function closeError() {
+            document.getElementById('errorModal').style.display = 'none';
+            document.getElementById('blank').innerHTML = "&nbsp;";
+        }
+
+        init();
+        document.oncontextmenu = () => false;
+    </script>
+</body>
+</html>
