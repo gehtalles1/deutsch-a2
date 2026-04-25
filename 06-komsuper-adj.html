@@ -1,0 +1,235 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>德语闯关 - 刘老师专业版</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&display=swap');
+        
+        html, body { height: 100vh; width: 100vw; margin: 0; padding: 0; overflow: hidden; background: #F8FAFC; font-family: 'Noto Sans SC', sans-serif; }
+        .app-container { width: 100%; max-width: 500px; height: 100%; margin: 0 auto; display: flex; flex-direction: column; background: white; }
+
+        @keyframes silkyBreathe {
+            0%, 100% { transform: scale(1); filter: drop-shadow(0 4px 6px rgba(99,102,241,0.1)); }
+            50% { transform: scale(1.08); filter: drop-shadow(0 15px 25px rgba(99, 102, 241, 0.3)); }
+        }
+        .breathe-icon { animation: silkyBreathe 4s ease-in-out infinite; display: inline-block; }
+
+        .progress-fill { height: 100%; background: #6366F1; transition: width 0.6s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        
+        .sentence-display { 
+            font-size: clamp(1.4rem, 4.2vh, 1.85rem); font-weight: 800; color: #1E293B; 
+            line-height: 2.1; margin-bottom: 8px; display: flex; flex-wrap: wrap; justify-content: center; align-items: baseline;
+            padding: 0 20px;
+        }
+
+        .blank-slot { 
+            display: inline-flex; align-items: center; justify-content: center;
+            min-width: 85px; border-bottom: 5px solid #6366F1; 
+            margin: 0 8px; color: #6366F1; font-weight: 900; height: 1.2em;
+        }
+        .blank-slot.correct { color: #22C55E; border-bottom-color: #22C55E; }
+
+        .translation-text { font-size: 1.3rem; font-weight: 700; color: #94A3B8; margin-top: 8px; padding: 0 30px; }
+
+        .bottom-nav { flex: none; background: #F8FAFC; border-top: 1px solid #E2E8F0; padding: 25px 15px calc(30px + env(safe-area-inset-bottom)); border-radius: 40px 40px 0 0; }
+        .chip-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; max-width: 440px; margin: 0 auto; }
+        
+        .chip { 
+            grid-column: span 2; background: white; border: 2px solid #E2E8F0; border-bottom: 6px solid #CBD5E1; 
+            border-radius: 20px; font-weight: 900; cursor: pointer; transition: all 0.1s; 
+            color: #334155; height: 68px;
+            display: flex; align-items: center; justify-content: center;
+            padding: 0 4px; overflow: hidden; 
+        }
+
+        .chip span { display: inline-block; white-space: nowrap; font-size: 1.1rem; }
+
+        .chip.last-row-left { grid-column: 2 / span 2; }
+        .chip.last-row-right { grid-column: 4 / span 2; }
+        .chip:active { transform: translateY(4px); border-bottom-width: 2px; }
+
+        .modal { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.98); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 20px; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header class="bg-white p-4 border-b flex-none">
+            <div class="flex items-center justify-between">
+                <button onclick="location.href='index.html'" class="w-10 h-10 flex items-center justify-center rounded-full bg-slate-50">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="3"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
+                <div class="flex-1 mx-6">
+                    <div class="h-2.5 bg-slate-100 rounded-full overflow-hidden mb-1"><div id="bar" class="progress-fill" style="width: 0%"></div></div>
+                    <div class="flex justify-between items-center">
+                        <span id="num" class="text-[12px] font-black text-indigo-500 tracking-tighter">01 / 30</span>
+                        <span class="text-[12px] font-black text-slate-400 tracking-widest uppercase">Ziel</span>
+                    </div>
+                </div><div class="w-10"></div>
+            </div>
+        </header>
+
+        <main class="flex-1 flex flex-col items-center justify-center p-4 text-center">
+            <div id="emoji" class="text-7xl mb-6 breathe-icon">👨‍🏫</div>
+            <div id="sentence" class="sentence-display"></div>
+            <div id="translation" class="translation-text"></div>
+        </main>
+
+        <footer class="bottom-nav">
+            <div id="options" class="chip-grid"></div>
+        </footer>
+    </div>
+
+    <div id="errorModal" class="modal">
+        <div class="bg-white rounded-[40px] w-full max-sm p-8 text-center border-t-[12px] border-red-500 shadow-2xl">
+            <div class="text-5xl mb-4">👩‍🏫</div>
+            <h3 class="text-2xl font-black text-slate-900 mb-2">刘老师课堂笔记</h3>
+            <p class="text-slate-400 text-[10px] font-black mb-6 tracking-[0.2em] uppercase">Teacher Liu's Diagnosis</p>
+            <div id="errorFeedback" class="text-left space-y-4 mb-8 text-slate-700 font-medium"></div>
+            <button onclick="closeError()" class="w-full py-4 bg-slate-900 text-white rounded-2xl font-black text-lg shadow-xl active:scale-95 transition-transform">纠正偏差，重新出发</button>
+        </div>
+    </div>
+
+    <div id="winModal" class="modal">
+        <div class="bg-white rounded-[40px] w-full max-w-sm p-10 text-center border-t-[12px] border-indigo-600 shadow-2xl">
+            <div class="text-7xl mb-6">🏆</div>
+            <h3 class="text-3xl font-black text-slate-900 mb-3">降服比较级！</h3>
+            <p class="text-slate-500 mb-10 font-bold leading-relaxed">刘老师：30道题全部拿下！<br>你的德语语感已经炉火纯青，点击确定回到地图吧。</p>
+            <button onclick="location.href='index.html'" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-lg shadow-xl">确定并返回地图</button>
+        </div>
+    </div>
+
+    <script>
+        const questDB = [
+            { s: ["Obst ist", " als Schokolade."], ans: "gesünder", opts: ["gesund", "gesünder", "am gesündesten", "gesunder", "mehr"], t: "水果比巧克力更健康。", r: "<b>变音重点：</b>gesund 变比较级时，u 必须变音为 <b>ü</b>。" },
+            { s: ["Ich esse gern Pizza, aber Pasta esse ich", "."], ans: "lieber", opts: ["gern", "lieber", "am liebsten", "guter", "mehr"], t: "我喜欢吃披萨，但我更喜欢吃意面。", r: "<b>重点突破：</b>gern 的比较级是完全不规则的 <b>lieber</b>。" },
+            { s: ["Berlin ist", " als Bonn."], ans: "größer", opts: ["groß", "größer", "am größten", "großer", "mehr"], t: "柏林比波恩大。", r: "<b>变音陷阱：</b>groß -> <b>größer</b>。注意 ß 后面直接加 er。" },
+            { s: ["Das ist das", " Buch im Regal."], ans: "interessanteste", opts: ["interessante", "interessanter", "interessanteste", "spannendste", "meiste"], t: "这是书架上最有趣的书。", r: "<b>定语最高级：</b>das 后面加最高级定语，注意结尾加 e 匹配 Buch。" },
+            { s: ["Kaffee ist", " als Wasser."], ans: "teurer", opts: ["teuer", "teuerer", "teurer", "billiger", "mehr"], t: "咖啡比水贵。", r: "<b>拼写细节：</b>teuer 变比较级时中间的 <b>e 会脱落</b>，变成 teurer。" },
+            { s: ["Heute ist das Wetter viel", "."], ans: "besser", opts: ["gut", "guter", "besser", "am besten", "schöner"], t: "今天的天气好多了。", r: "<b>彻底不规则：</b>gut -> <b>besser</b>，必须死记。" },
+            { s: ["Der Mount Everest ist der", " Berg."], ans: "höchste", opts: ["hochste", "höchste", "höher", "hocher", "meiste"], t: "珠峰是最高的山。", r: "<b>辅音丢失：</b>hoch 变最高级时 <b>c 会消失</b>，变为 höchste。" },
+            { s: ["Ich habe", " Zeit als du."], ans: "mehr", opts: ["viel", "mehr", "am meisten", "vieler", "viele"], t: "我的时间比你多。", r: "<b>数量比较：</b>viel 的比较级是 <b>mehr</b>。" },
+            { s: ["Wo ist die", " Apotheke?"], ans: "nächste", opts: ["nahe", "näher", "nächste", "am nächsten", "naheste"], t: "最近的药店在哪里？", r: "<b>生活高频：</b>nah 变最高级是不规则的 <b>nächste</b>。" },
+            { s: ["Er läuft", " als sein Bruder."], ans: "schneller", opts: ["schnell", "schneller", "am schnellsten", "mehr schnell", "schnellste"], t: "他跑得比他哥哥快。", r: "<b>规则巩固：</b>schnell 是标准形容词，直接加 <b>-er</b>。" },
+            { s: ["Im Winter sind die Tage", "."], ans: "am kürzesten", opts: ["kurz", "kürzer", "kürzeste", "am kürzesten", "längsten"], t: "冬天的白天最短。", r: "<b>结构完整：</b>表语最高级必须包含 <b>am ...-sten</b>。且 kurz 变音。" },
+            { s: ["Mein Bruder ist", " als ich."], ans: "älter", opts: ["alter", "älter", "ältere", "am ältesten", "mehr"], t: "我哥哥比我大。", r: "<b>年龄比较：</b>alt 是单音节，比较级必须变音为 <b>älter</b>。" },
+            { s: ["Dieses Kleid ist", "."], ans: "am schönsten", opts: ["schön", "schöner", "schönste", "am schönsten", "meisten"], t: "这件裙子最漂亮。", r: "<b>结构：</b>形容词在句尾表示最高级用 <b>am ...-sten</b>。" },
+            { s: ["Er spielt", " Tennis."], ans: "am besten", opts: ["gut", "besser", "am besten", "gutsten", "meisten"], t: "他网球打得最好。", r: "<b>动作评价：</b>最高级固定搭配 <b>am besten</b>。" },
+            { s: ["Mein Koffer ist", " als deiner."], ans: "schwerer", opts: ["schwer", "schwerer", "schwerste", "leichter", "mehr"], t: "我的行李比你的重。", r: "<b>规则：</b>schwer 后面直接加 <b>er</b>。" },
+            { s: ["Das ist der", " Koffer."], ans: "schwerste", opts: ["schwer", "schwerer", "schwerste", "leichteste", "meiste"], t: "这是最重的行李箱。", r: "<b>定语：</b>schwer 直接加 <b>-ste</b>，不需额外 e。" },
+            { s: ["Sie ist die", " Schülerin."], ans: "fleißigste", opts: ["fleißig", "fleißiger", "fleißigste", "am besten", "meiste"], t: "她是那个最勤奋的学生。", r: "<b>基础：</b>fleißig 变最高级定语直接加 <b>-ste</b>。" },
+            { s: ["Möchten Sie", " Suppe?"], ans: "mehr", opts: ["viel", "mehr", "am meisten", "viele", "vieler"], t: "您还要更多汤吗？", r: "<b>高频：</b>想要“更多”直接用 <b>mehr</b>。" },
+            { s: ["Wer singt", "?"], ans: "am schönsten", opts: ["schön", "schöner", "am schönsten", "schönste", "meisten"], t: "谁唱得最动听？", r: "<b>最高级副词：</b>必须是 <b>am schönsten</b>。" },
+            { s: ["China hat", " Einwohner."], ans: "am meisten", opts: ["viel", "mehr", "am meisten", "viele", "vieler"], t: "中国的人口最多。", r: "<b>不规则：</b>viel 的最高级形式是 <b>am meisten</b>。" },
+            { s: ["Welche Tasche ist", "?"], ans: "am schwersten", opts: ["schwer", "schwerer", "am schwersten", "schwerste", "meisten"], t: "哪个包最重？", r: "<b>表语最高级：</b>结尾处用 <b>am ...-sten</b> 结构。" },
+            { s: ["Der Weg ist", " als ich dachte."], ans: "länger", opts: ["lang", "länger", "längste", "am längsten", "mehr"], t: "路比我预想的长。", r: "<b>变音：</b>lang -> <b>länger</b>。a 变 ä。" },
+            { s: ["Es ist", " geworden."], ans: "kälter", opts: ["kalt", "kälter", "am kältesten", "wärmer", "mehr"], t: "天气变冷了。", r: "<b>语境：</b>暗示比之前冷，用比较级 <b>kälter</b>。" },
+            { s: ["Das ist der", " Weg zum Bahnhof."], ans: "kürzeste", opts: ["kurze", "kürzer", "kürzeste", "am kürzesten", "nächste"], t: "这是去火车站最短的路。", r: "<b>发音：</b>kurz 变最高级结尾是 z，加 <b>-este</b>。" },
+            { s: ["Sie ist meine", " Schwester."], ans: "jüngste", opts: ["jung", "jünger", "jüngste", "am jüngsten", "älteste"], t: "她是我的小妹妹。", r: "<b>变音：</b>jung -> <b>jüng-</b>。定语最高级加 -ste。" },
+            { s: ["Dieser Film ist", "."], ans: "interessanter", opts: ["interessant", "interessanter", "am interessantesten", "mehr", "spannender"], t: "这部电影更有趣。", r: "<b>长词：</b>多音节词比较级直接加 <b>-er</b>。" },
+            { s: ["Maria arbeitet", " als Peter."], ans: "fleißiger", opts: ["fleißig", "fleißiger", "am fleißigsten", "fleißigste", "mehr"], t: "玛利亚工作比彼得勤奋。", r: "<b>对比：</b>看到 als，肯定用比较级 <b>fleißiger</b>。" },
+            { s: ["Das Haus ist", " als das Büro."], ans: "höher", opts: ["hoch", "höher", "am höchsten", "hocher", "mehr"], t: "房子比办公室高。", r: "<b>特殊：</b>hoch 变比较级时 <b>c 变 h</b> 变成 <b>höher</b>。" },
+            { s: ["Meine Wohnung ist", " als deine."], ans: "kleiner", opts: ["klein", "kleiner", "am kleinsten", "kleinere", "mehr"], t: "我的公寓比你的小。", r: "<b>标准：</b>klein -> <b>kleiner</b>。" },
+            { s: ["Er ist mein", " Freund."], ans: "bester", opts: ["guter", "besser", "bester", "am besten", "gut"], t: "他是我最好的朋友。", r: "<b>不规则：</b>gut 最高级词干 <b>best-</b>，加修饰词尾 er。" }
+        ];
+
+        let cur = 0, gameList = [];
+
+        function init() {
+            gameList = [...questDB].sort(() => Math.random() - 0.5).slice(0, 30);
+            renderLevel();
+        }
+
+        function renderLevel() {
+            const q = gameList[cur];
+            document.getElementById('bar').style.width = `${(cur/gameList.length)*100}%`;
+            document.getElementById('num').innerText = `${String(cur+1).padStart(2,'0')} / ${gameList.length}`;
+            document.getElementById('emoji').innerText = ["👨‍🏫", "💡", "🎯", "🚀", "🎓"][cur % 5];
+            document.getElementById('translation').innerText = q.t;
+            
+            document.getElementById('sentence').innerHTML = `
+                <span>${q.s[0]}</span>
+                <span id="blank" class="blank-slot">&nbsp;</span>
+                <span>${q.s[1] || ''}</span>
+            `;
+
+            const optArea = document.getElementById('options');
+            optArea.innerHTML = "";
+            const shuffledOpts = [...q.opts].sort(() => Math.random() - 0.5);
+            
+            shuffledOpts.forEach((opt, idx) => {
+                const btn = document.createElement('div');
+                btn.className = 'chip';
+                if(idx === 3) btn.classList.add('last-row-left');
+                if(idx === 4) btn.classList.add('last-row-right');
+                
+                const span = document.createElement('span');
+                span.innerText = opt;
+                btn.appendChild(span);
+                
+                btn.onclick = () => check(opt);
+                optArea.appendChild(btn);
+
+                requestAnimationFrame(() => {
+                    const maxWidth = btn.offsetWidth - 8;
+                    const textWidth = span.offsetWidth;
+                    if (textWidth > maxWidth) {
+                        span.style.transform = `scale(${maxWidth / textWidth})`;
+                    }
+                });
+            });
+        }
+
+        function triggerWinEffect() {
+            const end = Date.now() + 600;
+            (function frame() {
+                confetti({ particleCount: 5, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#6366F1', '#22C55E'] });
+                confetti({ particleCount: 5, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#6366F1', '#22C55E'] });
+                if (Date.now() < end) requestAnimationFrame(frame);
+            }());
+        }
+
+        function check(userChoice) {
+            const q = gameList[cur];
+            const blank = document.getElementById('blank');
+            blank.innerText = userChoice;
+
+            if (userChoice === q.ans) {
+                blank.classList.add('correct');
+                triggerWinEffect();
+                // 修正：答对后显示3秒 (3000ms) 再进入下一题或结算
+                setTimeout(() => {
+                    cur++;
+                    if (cur < gameList.length) renderLevel();
+                    else document.getElementById('winModal').style.display = 'flex';
+                }, 3000); 
+            } else {
+                const fb = document.getElementById('errorFeedback');
+                fb.innerHTML = `
+                    <div class="bg-red-50 p-4 rounded-2xl mb-4 border-l-8 border-red-500">
+                        <p class="text-[11px] font-black text-red-400 mb-1 tracking-wider uppercase">Your Choice: ${userChoice}</p>
+                        <p class="text-xl font-black text-green-600">✅ 正解：${q.ans}</p>
+                    </div>
+                    <div class="px-2">
+                        <p class="text-[14px] leading-relaxed text-slate-600">${q.r}</p>
+                    </div>
+                `;
+                document.getElementById('errorModal').style.display = 'flex';
+            }
+        }
+
+        function closeError() {
+            document.getElementById('errorModal').style.display = 'none';
+            document.getElementById('blank').innerHTML = "&nbsp;";
+            document.getElementById('blank').classList.remove('correct');
+        }
+
+        init();
+        document.oncontextmenu = () => false;
+    </script>
+</body>
+</html>
