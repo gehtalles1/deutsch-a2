@@ -108,6 +108,12 @@
                 <h3 class="text-sm font-black text-slate-800">比较最高级适配</h3>
                 <p class="text-[9px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Komperativ & Superlativ</p>
             </div>
+
+            <div onclick="go('07-adj-endung')" class="a2-card p-5 flex flex-col items-center text-center card-active">
+                <div class="w-12 h-12 bg-[#F5F3FF] rounded-2xl flex items-center justify-center text-purple-600 font-black text-xl mb-3 shadow-lg shadow-purple-50 border border-purple-100">7</div>
+                <h3 class="text-sm font-black text-slate-800">形容词词尾魔鬼</h3>
+                <p class="text-[9px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Adjektivendungen</p>
+            </div>
         </main>
 
         <footer class="mt-12 text-center pb-10">
@@ -121,6 +127,7 @@
         function go(name) { 
             window.location.href = name + ".html"; 
         }
+        // 禁用右键菜单
         document.oncontextmenu = () => false;
     </script>
 </body>
