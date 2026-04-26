@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>德语 A2 闯关 - 代副词作战</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&family=Outfit:wght@600;800&display=swap');
+        
+        :root { --bg-color: #F8FAFC; --card-bg: rgba(255, 255, 255, 0.95); }
+
+        html, body { height: 100vh; width: 100vw; margin: 0; padding: 0; overflow: hidden; background: var(--bg-color); font-family: 'Outfit', 'Noto Sans SC', sans-serif; }
+        .app-container { width: 100%; max-width: 480px; height: 100%; margin: 0 auto; display: flex; flex-direction: column; background: radial-gradient(circle at top right, #FFF1F2, transparent), radial-gradient(circle at bottom left, #F0F9FF, transparent); }
+
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #6366F1, #F43F5E); border-radius: 99px; transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+        @keyframes iconPulse {
+            0% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.15); opacity: 1; }
+            100% { transform: scale(1); opacity: 0.8; }
+        }
+
+        .question-card { background: var(--card-bg); backdrop-filter: blur(10px); border: 1px solid rgba(255, 255, 255, 0.5); border-radius: 40px; padding: 32px 28px; box-shadow: 0 15px 35px rgba(0,0,0,0.03); text-align: left; }
+        .icon-container { display: flex; justify-content: center; width: 100%; }
+        .breathing-icon { font-size: 40px; margin-bottom: 24px; animation: iconPulse 2.5s infinite ease-in-out; will-change: transform, opacity; }
+
+        .speech-content { line-height: 1.45; font-size: 22px; font-weight: 800; color: #1E293B; letter-spacing: -0.3px; }
+        .dialogue-line { margin-bottom: 16px; display: flex; align-items: flex-start; gap: 10px; }
+        .speaker-tag { width: 26px; height: 26px; background: #E2E8F0; color: #475569; font-size: 13px; border-radius: 9px; font-weight: 900; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 4px; }
+
+        .bracket-wrapper { display: inline-flex; align-items: center; color: #F43F5E; vertical-align: baseline; }
+        .bracket-edge { color: #CBD5E1; opacity: 0.8; margin: 0 1px; }
+        .blank-content { min-width: 60px; text-align: center; border-bottom: 3px solid #F1F5F9; padding: 0 4px; transition: all 0.3s; }
+        .is-correct .blank-content { color: #10B981; border-color: transparent; }
+
+        .translation-area { margin-top: 20px; padding-top: 20px; border-top: 1px solid #F1F5F9; }
+        .trans-p { font-size: 16px; font-weight: 700; color: #64748B; margin-bottom: 8px; line-height: 1.5; }
+        .trans-tag { color: #94A3B8; font-size: 13px; margin-right: 6px; }
+
+        .opt-btn { border-radius: 22px; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; padding: 18px; font-weight: 800; font-size: 18px; text-align: center; border: 2px solid transparent; box-shadow: 0 4px 10px rgba(0,0,0,0.02); }
+        .opt-btn:active { transform: scale(0.92); }
+
+        .modal { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 24px; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header class="pt-10 px-8 flex-none">
+            <div class="flex items-center gap-5">
+                <button onclick="location.href='main.html'" class="w-12 h-12 flex items-center justify-center rounded-2xl bg-white shadow-sm active:scale-90"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#475569" stroke-width="3"><path d="M15 18l-6-6 6-6"/></svg></button>
+                <div class="flex-1">
+                    <div class="h-3 bg-white rounded-full p-0.5 shadow-inner">
+                        <div id="bar" class="progress-fill" style="width: 0%"></div>
+                    </div>
+                    <div class="flex justify-between mt-2.5 px-1">
+                        <span id="num" class="text-xs font-black text-rose-500 tracking-tighter">01 / 30</span>
+                        <span class="text-[10px] font-black text-slate-400 tracking-[0.2em] uppercase">ZIEL</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-1 flex flex-col px-8 justify-center pb-12">
+            <div class="question-card">
+                <div class="icon-container"><div id="emoji" class="breathing-icon">💡</div></div>
+                <div id="questionBody" class="space-y-1"></div>
+                <div id="translation" class="translation-area"></div>
+            </div>
+            <div id="options" class="grid grid-cols-2 gap-4 mt-8"></div>
+        </main>
+    </div>
+
+    <div id="errorModal" class="modal">
+        <div class="bg-white rounded-[40px] w-full max-sm p-8 shadow-2xl relative overflow-hidden">
+            <div class="absolute top-0 left-0 w-full h-2 bg-rose-500"></div>
+            <div class="flex items-center mb-6">
+                <div class="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center mr-4 text-3xl">📝</div>
+                <div>
+                    <h3 class="text-xl font-black text-slate-900 tracking-tight">重点错题解析</h3>
+                    <p class="text-[10px] font-bold text-rose-400 tracking-widest uppercase">Expert Review</p>
+                </div>
+            </div>
+            <div id="errorFeedback" class="space-y-4 text-left"></div>
+            <button onclick="closeError()" class="w-full mt-8 py-5 bg-slate-900 text-white rounded-3xl font-black text-lg active:scale-95 shadow-lg shadow-slate-200">吸收并继续</button>
+        </div>
+    </div>
+
+    <div id="winModal" class="modal">
+        <div class="bg-white rounded-[40px] w-full max-w-sm p-12 text-center shadow-2xl relative">
+            <div class="absolute -top-10 left-1/2 -translate-x-1/2 w-20 h-20 bg-emerald-500 rounded-3xl flex items-center justify-center text-4xl shadow-xl shadow-emerald-100">🏆</div>
+            <h3 class="text-2xl font-black text-slate-900 mt-6 mb-2">大获全胜！</h3>
+            <p class="text-slate-400 mb-10 font-bold text-sm">30组代副词搭配已全数掌握。</p>
+            <button onclick="location.href='main.html'" class="w-full py-5 bg-emerald-500 text-white rounded-3xl font-black text-lg shadow-lg">领取奖章</button>
+        </div>
+    </div>
+
+    <script>
+        const questDB = [
+            { type:'dialogue', lines:[{label:'A',text:'Woran denkst du gerade?'},{label:'B',text:'Ich denke ',blank:true,suffix:' , dass wir bald fertig sind.'}], ans:"daran", opts:["daran","davon","darauf","dazu"], t:['A: 你这会儿在想什么呢？','B: 我在想，咱们是不是快忙完了。'], e:"💭", r:"【刘老师解析】denken 搭配 an。当指代具体的 dass 从句内容时，主句需用 daran 作为引导占位符。" },
+            { type:'dialogue', lines:[{label:'A',text:'Bist du mit dem Plan einverstanden?'},{label:'B',text:'Ja, ich bin ',blank:true,suffix:' einverstanden.'}], ans:"damit", opts:["damit","dafür","dazu","daran"], t:['A: 你同意这个计划吗？','B: 是的，我对此没有异议。'], e:"🤝", r:"【刘老师解析】einverstanden sein 必须搭配 mit。指代上文提到的一项提议或计划时，合并为 damit。" },
+            { type:'dialogue', lines:[{label:'A',text:'',blank:true,suffix:' hast du dich am meisten gefreut?'},{label:'B',text:'Über die Blumen!'}], ans:"Worüber", opts:["Worüber","Worauf","Wovon","Woran"], t:['A: 刚才什么事让你最开心？','B: 收到这些花让我特别高兴。'], e:"💐", r:"【刘老师解析】sich freuen über 用于表达对“已经发生”的事感到高兴。提问事物用 Worüber。" },
+            { type:'dialogue', lines:[{label:'A',text:'Freust du dich schon auf die Party?'},{label:'B',text:'Ja, ich freue mich sehr ',blank:true,suffix:'.'}], ans:"darauf", opts:["darauf","darüber","daran","dazu"], t:['A: 你期待那个派对吗？','B: 嗯，我非常期待那场聚会。'], e:"🥳", r:"【刘老师解析】sich freuen auf 用于表达对“尚未发生”的事感到期待。代副词用 darauf。" },
+            { type:'dialogue', lines:[{label:'A',text:' ',blank:true,suffix:' hast du Angst?'},{label:'B',text:'Vor dem großen Hund dort.'}], ans:"Wovor", opts:["Wovor","Wovon","Woran","Womit"], t:['A: 你到底在害怕什么？','B: 就在怕那边那只大狗。'], e:"🐕", r:"【刘老师解析】Angst haben 搭配介词 vor。针对令人恐惧的事物提问，使用 Wovor。" },
+            { type:'dialogue', lines:[{label:'A',text:'Hast du schon mit dem Chef gesprochen?'},{label:'B',text:'Nein, ich warte noch ',blank:true,suffix:'.'}], ans:"darauf", opts:["darauf","daran","dazu","damit"], t:['A: 你找老板谈过了吗？','B: 还没，我还在等机会回复。'], e:"💼", r:"【刘老师解析】warten 搭配介词 auf。由于介词以元音开头，指代时中间需加 -r-，形成 darauf。" },
+            { type:'dialogue', lines:[{label:'A',text:'Träumst du oft von einem Haus am Meer?'},{label:'B',text:'Ja, ich träume oft ',blank:true,suffix:'.'}], ans:"davon", opts:["davon","daran","dazu","daraus"], t:['A: 你常梦想在海边有座房子吗？','B: 对，我经常梦到那种场景。'], e:"🏠", r:"【刘老师解析】梦想某事用 träumen von。指代梦境中的内容，代副词使用 davon。" },
+            { type:'dialogue', lines:[{label:'A',text:' ',blank:true,suffix:' interessierst du dich?'},{label:'B',text:'Für moderne Kunst.'}], ans:"Wofür", opts:["Wofür","Woran","Wozu","Wovon"], t:['A: 你的兴趣点在哪儿？','B: 我对现代艺术比较感兴趣。'], e:"🎨", r:"【刘老师解析】sich interessieren 搭配介词 für。提问兴趣所在的事物用 Wofür。" },
+            { type:'dialogue', lines:[{label:'A',text:'Glaubst du an Wunder?'},{label:'B',text:'Nein, ich glaube nicht ',blank:true,suffix:'.'}], ans:"daran", opts:["daran","darauf","davon","dazu"], t:['A: 你相信奇迹吗？','B: 不，我不信那套。'], e:"🔮", r:"【刘老师解析】相信某事用 glauben an (+ Akk.)。指代抽象的信念用 daran。" },
+            { type:'dialogue', lines:[{label:'A',text:'Hörst du jetzt ',blank:true,suffix:' auf?'},{label:'B',text:'Ja, ich bin zu müde.'}], ans:"damit", opts:["damit","davon","dazu","daraus"], t:['A: 你现在打算收手吗？','B: 对，我实在太累了。'], e:"🛑", r:"【刘老师解析】停止某项活动用 aufhören mit。指代正在做的具体任务用 damit。" },
+            { type:'single', text:'Er hat mich ', blank:true, suffix:' gebeten, ihm zu helfen.', ans:"darum", opts:["darum","dazu","daran","dafür"], t:['他以此事恳求我，即帮他。'], e:"🙋", r:"【刘老师解析】bitten 搭配介词 um。后接 zu 不定式引导请求内容时，主句须用 darum 占位。" },
+            { type:'single', text:'Sie achtet immer ', blank:true, suffix:', dass die Tür zu ist.', ans:"darauf", opts:["darauf","daran","darüber","damit"], t:['她总是留意这件事：门是否关好。'], e:"🚪", r:"【刘老师解析】注意某事用 achten auf。指代后文的 dass 从句，使用 darauf 占位。" },
+            { type:'single', text:'Wir haben lange ', blank:true, suffix:' diskutiert.', ans:"darüber", opts:["darüber","daran","dazu","davon"], t:['关于那个议题，我们讨论了很久。'], e:"🗣️", r:"【刘老师解析】探讨某事用 diskutieren über (+ Akk.)。代副词为 darüber。" },
+            { type:'single', text:'Ich lade dich ', blank:true, suffix:' ein.', ans:"dazu", opts:["dazu","dafür","daran","damit"], t:['我邀请你参加那个活动。'], e:"✉️", r:"【刘老师解析】邀请参加某事用 einladen zu。指代所邀请的场合用 dazu。" },
+            { type:'single', text:'Ich erinnere mich nicht ', blank:true, suffix:'.', ans:"daran", opts:["daran","darauf","davon","darüber"], t:['我已经完全不记得那件事了。'], e:"🧠", r:"【刘老师解析】回忆起某事用 sich erinnern an (+ Akk.)。代副词固定用 daran。" },
+            { type:'single', text:'Er zweifelt ', blank:true, suffix:'.', ans:"daran", opts:["daran","darauf","davon","dazu"], t:['他对此深表怀疑。'], e:"🤨", r:"【刘老师解析】怀疑某事用 zweifeln an (+ Dat.)。代副词形式固定为 daran。" },
+            { type:'single', text:'Bist du fertig ', blank:true, suffix:'?', ans:"damit", opts:["damit","davon","dazu","danach"], t:['你手头的这件事忙完了吗？'], e:"✅", r:"【刘老师解析】完成某事用 fertig sein mit。代副词用 damit。" },
+            { type:'single', text:'Ich bin stolz ', blank:true, suffix:'.', ans:"darauf", opts:["darauf","darüber","daran","dazu"], t:['我为此深感自豪。'], e:"👑", r:"【刘老师解析】为...自豪用 stolz sein auf (+ Akk.)。代副词用 darauf。" },
+            { type:'single', text:'Er hat Angst ', blank:true, suffix:'.', ans:"davor", opts:["davor","davon","daran","dazu"], t:['他一直害怕发生那种情况。'], e:"😨", r:"【刘老师解析】恐惧某事用 Angst haben vor。指代所畏惧的事物使用 davor。" },
+            { type:'single', text:'Ich lerne viel ', blank:true, suffix:'.', ans:"daraus", opts:["daraus","davon","daran","dazu"], t:['我从这段经历中获益匪浅。'], e:"🎓", r:"【刘老师解析】从某事中吸取教训用 lernen aus。指代源头使用 daraus。" },
+            { type:'dialogue', lines:[{label:'A',text:'Bist du ',blank:true,suffix:' zufrieden?'},{label:'B',text:'Ja, das Ergebnis ist super.'}], ans:"damit", opts:["damit","dafür","dazu","daran"], t:['A: 你对这结果满意吗？','B: 嗯，结果太棒了。'], e:"😊", r:"【刘老师解析】满意于某事用 zufrieden sein mit。指代该事物用 damit。" },
+            { type:'single', text:'Es kommt ', blank:true, suffix:' an, wie das Wetter ist.', ans:"darauf", opts:["darauf","daran","dazu","davon"], t:['这取决于天气状况如何。'], e:"🌦️", r:"【刘老师解析】取决于某事用 ankommen auf (+ Akk.)。引导从句用 darauf 占位。" },
+            { type:'dialogue', lines:[{label:'A',text:'Passt dieser Wein zum Essen?'},{label:'B',text:'Ja, er passt perfekt ',blank:true,suffix:'.'}], ans:"dazu", opts:["dazu","damit","daran","dafür"], t:['A: 这款酒配这道菜吗？','B: 嗯，搭配得非常完美。'], e:"🍷", r:"【刘老师解析】搭配某物用 passen zu。指代菜肴用 dazu。" },
+            { type:'single', text:'Wir bereiten uns ', blank:true, suffix:' vor.', ans:"darauf", opts:["darauf","daran","dazu","dafür"], t:['我们正为此（即将到来的事）做准备。'], e:"📝", r:"【刘老师解析】为某事做准备用 sich vorbereiten auf (+ Akk.)。代副词为 darauf。" },
+            { type:'dialogue', lines:[{label:'A',text:' ',blank:true,suffix:' hast du dich beschwert?'},{label:'B',text:'Über den Lärm im Hotel.'}], ans:"Worüber", opts:["Worüber","Wofür","Wovon","Woran"], t:['A: 你投诉了什么？','B: 投诉旅馆里的噪音。'], e:"📢", r:"【刘老师解析】投诉/抱怨某事用 sich beschweren über (+ Akk.)。提问用 Worüber。" },
+            { type:'single', text:'Er hat sich ', blank:true, suffix:' verliebt.', ans:"darin", opts:["darin","daran","darauf","damit"], t:['他爱上了那个地方。'], e:"❤️", r:"【刘老师解析】爱上某物用 sich verlieben in (+ Akk.)。代副词形式为 darin。" },
+            { type:'dialogue', lines:[{label:'A',text:'Hilfst du mir beim Umzug?'},{label:'B',text:'Klar, ich helfe dir ',blank:true,suffix:'.'}], ans:"dabei", opts:["dabei","damit","dazu","dafür"], t:['A: 搬家你能帮我吗？','B: 没问题，我会帮你的。'], e:"📦", r:"【刘老师解析】在某事上帮忙用 helfen bei (+ Dat.)。代副词用 dabei。" },
+            { type:'single', text:'Ich danke dir ', blank:true, suffix:'.', ans:"dafür", opts:["dafür","dazu","daran","damit"], t:['我为此向你表示感谢。'], e:"🎁", r:"【刘老师解析】为某事感谢用 danken für (+ Akk.)。代副词用 dafür。" },
+            { type:'dialogue', lines:[{label:'A',text:'Hast du dich ',blank:true,suffix:' entschieden?'},{label:'B',text:'Ja, ich nehme das blaue Auto.'}], ans:"dafür", opts:["dafür","dazu","daran","darauf"], t:['A: 你决定好选它了吗？','B: 嗯，我选蓝色那辆车。'], e:"🚗", r:"【刘老师解析】决定选择某物用 sich entscheiden für (+ Akk.)。代副词用 dafür。" },
+            { type:'single', text:'Das passt nicht ', blank:true, suffix:'.', ans:"dazu", opts:["dazu","damit","daran","dafür"], t:['那跟这个并不匹配。'], e:"❌", r:"【刘老师解析】不匹配、不合适用 passen zu。代副词用 dazu。" }
+        ];
+
+        let cur = 0, gameList = [];
+        const colors = [
+            {bg:'#EFF6FF', text:'#1D4ED8', border:'#DBEAFE'}, 
+            {bg:'#FFF1F2', text:'#E11D48', border:'#FFE4E6'}, 
+            {bg:'#F0FDF4', text:'#15803D', border:'#DCFCE7'}, 
+            {bg:'#FAF5FF', text:'#7E22CE', border:'#F3E8FF'}  
+        ];
+
+        function init() {
+            gameList = [...questDB].sort(() => Math.random() - 0.5);
+            render();
+        }
+
+        function render() {
+            const q = gameList[cur];
+            document.getElementById('bar').style.width = `${((cur + 1) / gameList.length) * 100}%`;
+            document.getElementById('num').innerText = `${String(cur + 1).padStart(2, '0')} / ${gameList.length}`;
+            document.getElementById('emoji').innerText = q.e;
+            const transArea = document.getElementById('translation');
+            transArea.innerHTML = q.t.map(line => {
+                const parts = line.split(': ');
+                return parts.length > 1 ? `<div class="trans-p"><span class="trans-tag">${parts[0]}:</span>${parts[1]}</div>` : `<div class="trans-p">${line}</div>`;
+            }).join('');
+            const qBody = document.getElementById('questionBody');
+            qBody.innerHTML = "";
+            if(q.type === 'dialogue') {
+                q.lines.forEach(line => {
+                    const div = document.createElement('div');
+                    div.className = "dialogue-line";
+                    div.innerHTML = `<span class="speaker-tag">${line.label}</span><div class="speech-content">${line.text}${line.blank ? renderBlank() : ''}${line.suffix || ''}</div>`;
+                    qBody.appendChild(div);
+                });
+            } else {
+                qBody.innerHTML = `<div class="speech-content text-left">${q.text}${renderBlank()}${q.suffix || ''}</div>`;
+            }
+            const optArea = document.getElementById('options');
+            optArea.innerHTML = "";
+            [...q.opts].sort(() => Math.random() - 0.5).forEach((opt, idx) => {
+                const color = colors[idx % colors.length];
+                const btn = document.createElement('div');
+                btn.className = "opt-btn";
+                btn.style.backgroundColor = color.bg; btn.style.color = color.text; btn.style.borderColor = color.border;
+                btn.innerText = opt; btn.onclick = () => check(opt);
+                optArea.appendChild(btn);
+            });
+        }
+
+        function renderBlank() { return `<span id="bracketBox" class="bracket-wrapper"><span class="bracket-edge">(</span><span id="blank" class="blank-content">?</span><span class="bracket-edge">)</span></span>`; }
+
+        function celebrate() {
+            const rand = Math.random();
+            if (rand < 0.3) {
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.7 }, colors: ['#6366F1', '#F43F5E', '#10B981'] });
+            } else if (rand < 0.6) {
+                const duration = 2.5 * 1000;
+                const end = Date.now() + duration;
+                (function frame() {
+                    confetti({ particleCount: 3, angle: 60, spread: 55, origin: { x: 0 }, colors: ['#F43F5E'] });
+                    confetti({ particleCount: 3, angle: 120, spread: 55, origin: { x: 1 }, colors: ['#6366F1'] });
+                    if (Date.now() < end) requestAnimationFrame(frame);
+                }());
+            } else {
+                const defaults = { spread: 360, ticks: 50, gravity: 0, decay: 0.94, startVelocity: 30, colors: ['FFE400', 'FFBD00', 'E89400'] };
+                confetti({ ...defaults, particleCount: 40, scalar: 1.2, shapes: ['star'] });
+                confetti({ ...defaults, particleCount: 10, scalar: 0.75, shapes: ['circle'] });
+            }
+        }
+
+        function check(choice) {
+            const q = gameList[cur];
+            const blank = document.getElementById('blank');
+            const box = document.getElementById('bracketBox');
+            blank.innerText = choice;
+            if (choice === q.ans) {
+                box.classList.add('is-correct');
+                celebrate();
+                setTimeout(() => {
+                    cur++;
+                    if (cur < gameList.length) render();
+                    else document.getElementById('winModal').style.display = 'flex';
+                }, 3000);
+            } else { showError(choice, q); }
+        }
+
+        function showError(choice, q) {
+            const fb = document.getElementById('errorFeedback');
+            fb.innerHTML = `
+                <div class="bg-slate-50 p-6 rounded-3xl border border-slate-100 mb-2 text-center">
+                    <div class="flex items-center justify-center gap-6">
+                        <span class="text-rose-400 line-through font-black text-xl">${choice}</span>
+                        <span class="text-slate-300">→</span>
+                        <span class="text-emerald-500 font-black text-3xl animate-pulse">${q.ans}</span>
+                    </div>
+                </div>
+                <p class="text-slate-700 text-[16px] font-bold leading-relaxed px-2">${q.r}</p>
+            `;
+            document.getElementById('errorModal').style.display = 'flex';
+        }
+
+        function closeError() { document.getElementById('errorModal').style.display = 'none'; document.getElementById('blank').innerText = "?"; }
+        init();
+        document.oncontextmenu = () => false;
+    </script>
+</body>
+</html>
