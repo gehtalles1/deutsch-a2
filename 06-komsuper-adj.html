@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>德语闯关 - 刘老师专业版</title>
+    <title>比较级最高级适配 - 刘老师德语课</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
@@ -60,7 +60,7 @@
     <div class="app-container">
         <header class="bg-white p-4 border-b flex-none">
             <div class="flex items-center justify-between">
-                <button onclick="location.href='index.html'" class="w-10 h-10 flex items-center justify-center rounded-full bg-slate-50">
+                <button onclick="location.href='main.html'" class="w-10 h-10 flex items-center justify-center rounded-full bg-slate-50">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="3"><path d="M15 18l-6-6 6-6"/></svg>
                 </button>
                 <div class="flex-1 mx-6">
@@ -97,9 +97,9 @@
     <div id="winModal" class="modal">
         <div class="bg-white rounded-[40px] w-full max-w-sm p-10 text-center border-t-[12px] border-indigo-600 shadow-2xl">
             <div class="text-7xl mb-6">🏆</div>
-            <h3 class="text-3xl font-black text-slate-900 mb-3">降服比较级！</h3>
+            <h3 class="text-3xl font-black text-slate-900 mb-3">比较级最高级适配！</h3>
             <p class="text-slate-500 mb-10 font-bold leading-relaxed">刘老师：30道题全部拿下！<br>你的德语语感已经炉火纯青，点击确定回到地图吧。</p>
-            <button onclick="location.href='index.html'" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-lg shadow-xl">确定并返回地图</button>
+            <button onclick="location.href='main.html'" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-lg shadow-xl">确定并返回地图</button>
         </div>
     </div>
 
@@ -128,7 +128,7 @@
             { s: ["Welche Tasche ist", "?"], ans: "am schwersten", opts: ["schwer", "schwerer", "am schwersten", "schwerste", "meisten"], t: "哪个包最重？", r: "<b>表语最高级：</b>结尾处用 <b>am ...-sten</b> 结构。" },
             { s: ["Der Weg ist", " als ich dachte."], ans: "länger", opts: ["lang", "länger", "längste", "am längsten", "mehr"], t: "路比我预想的长。", r: "<b>变音：</b>lang -> <b>länger</b>。a 变 ä。" },
             { s: ["Es ist", " geworden."], ans: "kälter", opts: ["kalt", "kälter", "am kältesten", "wärmer", "mehr"], t: "天气变冷了。", r: "<b>语境：</b>暗示比之前冷，用比较级 <b>kälter</b>。" },
-            { s: ["Das ist der", " Weg zum Bahnhof."], ans: "kürzeste", opts: ["kurze", "kürzer", "kürzeste", "am kürzesten", "nächste"], t: "这是去火车站最短的路。", r: "<b>发音：</b>kurz 变最高级结尾是 z，加 <b>-este</b>。" },
+            { s: ["Das ist der", " 向火车站最短的路。"], ans: "kürzeste", opts: ["kurze", "kürzer", "kürzeste", "am kürzesten", "nächste"], t: "这是去火车站最短的路。", r: "<b>发音：</b>kurz 变最高级结尾是 z，加 <b>-este</b>。" },
             { s: ["Sie ist meine", " Schwester."], ans: "jüngste", opts: ["jung", "jünger", "jüngste", "am jüngsten", "älteste"], t: "她是我的小妹妹。", r: "<b>变音：</b>jung -> <b>jüng-</b>。定语最高级加 -ste。" },
             { s: ["Dieser Film ist", "."], ans: "interessanter", opts: ["interessant", "interessanter", "am interessantesten", "mehr", "spannender"], t: "这部电影更有趣。", r: "<b>长词：</b>多音节词比较级直接加 <b>-er</b>。" },
             { s: ["Maria arbeitet", " als Peter."], ans: "fleißiger", opts: ["fleißig", "fleißiger", "am fleißigsten", "fleißigste", "mehr"], t: "玛利亚工作比彼得勤奋。", r: "<b>对比：</b>看到 als，肯定用比较级 <b>fleißiger</b>。" },
@@ -201,12 +201,11 @@
             if (userChoice === q.ans) {
                 blank.classList.add('correct');
                 triggerWinEffect();
-                // 修正：答对后显示3秒 (3000ms) 再进入下一题或结算
                 setTimeout(() => {
                     cur++;
                     if (cur < gameList.length) renderLevel();
                     else document.getElementById('winModal').style.display = 'flex';
-                }, 3000); 
+                }, 1500); // 答对后等待1.5秒，平衡流畅感和成就感
             } else {
                 const fb = document.getElementById('errorFeedback');
                 fb.innerHTML = `
