@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>德语 A2 闯关 - 地点介词</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&display=swap');
+        
+        html, body { height: 100vh; width: 100vw; margin: 0; padding: 0; overflow: hidden; background: #FFFFFF; font-family: 'Noto Sans SC', sans-serif; }
+        .app-container { width: 100%; max-width: 500px; height: 100%; margin: 0 auto; display: flex; flex-direction: column; position: relative; }
+
+        /* 选项框颜色与高级交互 */
+        .opt-0 { background: #F0F9FF; border: 2px solid #E0F2FE; border-bottom: 5px solid #BAE6FD; color: #0369A1; }
+        .opt-1 { background: #F0FDF4; border: 2px solid #DCFCE7; border-bottom: 5px solid #BBF7D0; color: #15803D; }
+        .opt-2 { background: #FFF7ED; border: 2px solid #FFEDD5; border-bottom: 5px solid #FED7AA; color: #C2410C; }
+        .opt-3 { background: #FAF5FF; border: 2px solid #F3E8FF; border-bottom: 5px solid #E9D5FF; color: #7E22CE; }
+
+        .option-card {
+            border-radius: 24px; transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+            padding: 20px 10px; font-weight: 800; font-size: 1.2rem;
+        }
+        .option-card:active { transform: scale(0.95); }
+
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #6366F1, #8B5CF6); transition: width 0.6s ease; }
+        
+        /* 图标动画效果 */
+        @keyframes iconBounce {
+            0%, 100% { transform: scale(1) rotate(0deg); }
+            50% { transform: scale(1.15) rotate(5deg); }
+        }
+        .animate-icon { animation: iconBounce 1.5s infinite ease-in-out; }
+
+        /* 括号填空模式 */
+        #sentence {
+            display: flex; flex-wrap: wrap; justify-content: center; align-items: center;
+            line-height: 1.6; gap: 4px;
+        }
+
+        .bracket-wrapper {
+            display: inline-flex; align-items: center; font-weight: 900; color: #6366F1; padding: 0 4px;
+        }
+
+        .bracket-left, .bracket-right {
+            font-size: 32px; color: #CBD5E1; font-family: serif;
+        }
+
+        .blank-content {
+            min-width: 60px; text-align: center; padding: 0 12px; font-size: 28px;
+            border: none !important; text-decoration: none !important;
+        }
+
+        .bracket-wrapper.is-correct .blank-content { color: #10B981; }
+        .bracket-wrapper.is-correct .bracket-left, 
+        .bracket-wrapper.is-correct .bracket-right { color: #10B981; opacity: 0.5; }
+
+        .modal { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.96); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 24px; }
+        .slide-in { animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        @keyframes slideIn { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
+
+        .tag { display: inline-block; padding: 2px 8px; border-radius: 6px; font-size: 10px; font-weight: 900; margin-bottom: 4px; text-transform: uppercase; }
+        .tag-logic { background: #EEF2FF; color: #4F46E5; }
+        .tag-warn { background: #FFF7ED; color: #C2410C; }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header class="pt-10 px-6 pb-4 flex-none">
+            <div class="flex items-center gap-4">
+                <button onclick="location.href='main.html'" class="w-10 h-10 flex-none flex items-center justify-center rounded-full bg-slate-50 active:scale-90 transition-transform">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="3"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
+                <div class="flex-1 relative pt-2">
+                    <div class="flex items-center gap-3">
+                        <div class="flex-1 h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                            <div id="bar" class="progress-fill" style="width: 0%"></div>
+                        </div>
+                        <span class="text-[11px] font-black text-slate-300 tracking-widest">ZIEL</span>
+                    </div>
+                    <div id="num" class="text-[12px] font-black text-indigo-400 mt-2 text-center w-[88%] tracking-tighter">01 / 30</div>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-1 flex flex-col px-8 justify-center">
+            <div id="quiz-box" class="slide-in">
+                <div id="emoji" class="text-7xl mb-10 text-center animate-icon">📍</div>
+                <div id="sentence" class="text-[26px] font-black text-slate-800 mb-10"></div>
+                <p id="translation" class="text-[18px] font-bold text-slate-500 bg-slate-50 py-5 px-6 rounded-3xl text-center mb-12 border border-slate-100"></p>
+                <div id="options" class="grid grid-cols-2 gap-4 max-w-sm mx-auto"></div>
+            </div>
+        </main>
+    </div>
+
+    <div id="errorModal" class="modal">
+        <div class="bg-white rounded-[40px] w-full max-w-sm p-8 border-t-[14px] border-red-500 shadow-2xl relative overflow-hidden slide-in">
+            <div class="flex items-center mb-6">
+                <div class="w-14 h-14 bg-red-50 rounded-2xl flex items-center justify-center mr-4 text-3xl border border-red-100">👩‍🏫</div>
+                <div>
+                    <h3 class="text-xl font-black text-slate-900">刘老师德语精讲</h3>
+                    <div class="flex gap-2">
+                        <span class="text-[9px] font-black bg-red-100 text-red-600 px-1.5 py-0.5 rounded">A2 LEVEL</span>
+                        <span class="text-[9px] font-black bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded uppercase">Grammatik</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div id="errorFeedback" class="space-y-4"></div>
+
+            <button onclick="closeError()" class="w-full mt-8 py-5 bg-slate-900 text-white rounded-2xl font-black text-lg active:scale-95 transition-all shadow-xl">
+                吸收知识，继续挑战
+            </button>
+        </div>
+    </div>
+
+    <div id="winModal" class="modal">
+        <div class="bg-white rounded-[40px] w-full max-w-sm p-10 text-center border-t-[12px] border-indigo-600 shadow-2xl">
+            <div class="text-7xl mb-6">🏆</div>
+            <h3 class="text-3xl font-black text-slate-900 mb-3">方位感宗师！</h3>
+            <p class="text-slate-500 mb-10 font-bold">30道地点介词难题全部通关！</p>
+            <button onclick="location.href='main.html'" class="w-full py-4 bg-indigo-600 text-white rounded-2xl font-black text-lg shadow-xl">返回主地图</button>
+        </div>
+    </div>
+
+    <script>
+        const questDB = [
+            { s: ["Wir fahren am Wochenende", "Meer."], ans: "ans", opts: ["ans", "am", "ins", "nach"], t: "我们周末去海边。", e: "🌊", r: { logic: "去水边（海/湖/河）目的地用 <b>an</b>。动态位移需用 Akkusativ。an + das = <b>ans</b>。", warn: "如果选 ins 说明你要“钻进”水里去了，通常指游泳或潜水！" }},
+            { s: ["Ich komme gerade", "der Schweiz."], ans: "aus", opts: ["aus", "von", "in", "nach"], t: "我刚从瑞士过来。", e: "🇨🇭", r: { logic: "瑞士 (die Schweiz) 是带冠词国家。从“内部空间”离开，介词必选 <b>aus</b>。", warn: "von 通常用于离开某个坐标点或方位，而 aus 强调从国家内部出来。" }},
+            { s: ["Wann fliegst du", "Deutschland?"], ans: "nach", opts: ["nach", "in", "zu", "an"], t: "你什么时候飞去德国？", e: "✈️", r: { logic: "对于大多数没有冠词的国家、城市名，表示“去哪里”时，唯一正确的介词是 <b>nach</b>。", warn: "只有带冠词的国家（如 die USA, die Schweiz）才用 in + Akk。" }},
+            { s: ["Häng das Bild bitte", "die Wand."], ans: "an", opts: ["an", "auf", "in", "zu"], t: "请把画挂到墙上。", e: "🖼️", r: { logic: "墙面是垂直立面。在德语空间逻辑中，挂在垂直面上使用 <b>an</b>。", warn: "auf 是指放在水平表面上方（如桌面上）。" }},
+            { s: ["Gehst du heute", "Arzt?"], ans: "zum", opts: ["zum", "ins", "nach", "nach dem"], t: "你今天去看医生吗？", e: "👨‍⚕️", r: { logic: "向“人”移动（去某人那里），目的地介词永远是 <b>zu</b>。zu + dem Arzt = <b>zum</b>。", warn: "nach 用于地名，in 用于建筑内部。看病请认准 zu。" }},
+            { s: ["Wir setzen uns", "den Tisch."], ans: "an", opts: ["an", "auf", "in", "nach"], t: "我们坐到桌子旁。", e: "🥗", r: { logic: "坐在桌边用餐是靠近边缘，用 <b>an + Akk.</b>。", warn: "如果你选 auf den Tisch，那就是直接坐在桌子板凳面上了，这不礼貌哦！" }},
+            { s: ["Er springt", "das Wasser."], ans: "in", opts: ["in", "an", "zu", "nach"], t: "他跳进水里。", e: "🏊", r: { logic: "跳入水中意味着进入三维空间的内部，使用 <b>in + Akkusativ</b>。", warn: "an das Wasser 只是到了水边，没有入水动作。" }},
+            { s: ["Ich bin müde. Ich gehe", "Hause."], ans: "nach", opts: ["nach", "zu", "in", "an"], t: "我累了。我要回家。", e: "🏠", r: { logic: "德语中最经典的固定用法：回家用 <b>nach Hause</b>。", warn: "注意区分：在家是 zu Hause（静止态）。" }},
+            { s: ["Wir gehen heute Abend", "Kino."], ans: "ins", opts: ["ins", "nach", "zum", "auf"], t: "我们今晚去电影院。", e: "🎬", r: { logic: "去电影院看电影，强调进入内部功能区，用 <b>in + das = ins</b>。", warn: "zu 也可以表示去那个方向，但 ins 是最地道的日常说法。" }},
+            { s: ["Ich fahre morgen", "meine Oma."], ans: "zu", opts: ["zu", "nach", "in", "an"], t: "我明天去我奶奶家。", e: "👵", r: { logic: "无论去谁家，只要目的地是“某人”，介词锁定 <b>zu</b>。", warn: "nach 只能接无冠词的地名。去奶奶家不能用 nach。" }},
+            { s: ["Er geht schnell", "die Post."], ans: "zur", opts: ["zur", "nach", "in", "aus"], t: "他快步去邮局。", e: "📯", r: { logic: "去邮局、银行等功能性机构，常用 <b>zu</b>。die Post 是阴性，zu + der = <b>zur</b>。", warn: "in 也可以，但 zu 侧重于去办事这个功能。" }},
+            { s: ["Ich hole dich", "Flughafen ab."], ans: "vom", opts: ["vom", "aus", "nach", "zu"], t: "我去机场接你。", e: "🛫", r: { logic: "从机场、火车站等大型公共场所离开，用 <b>von + dem = vom</b>。", warn: "aus 强调从封闭的小房间出来。机场太大，通常看作一个坐标点。" }},
+            { s: ["Stell die Blumen", "das Fenster."], ans: "ans", opts: ["ans", "auf", "in", "nach"], t: "把花摆到窗边。", e: "🌷", r: { logic: "靠近窗户的垂直边缘，位移方向用 <b>an + Akkusativ</b>。an + das = <b>ans</b>。", warn: "auf das Fenster 是摆在窗户框上面（如果窗框够宽的话）。" }},
+            { s: ["Die Kinder laufen", "den Spielplatz."], ans: "auf", opts: ["auf", "in", "zu", "nach"], t: "孩子们跑向操场。", e: "⚽", r: { logic: "操场、广场等露天的“开放平面”，目的地用 <b>auf + Akkusativ</b>。", warn: "in 强调封闭性。对于操场，德语更习惯看作一个面。" }},
+            { s: ["Er kommt", "der Bäckerei."], ans: "aus", opts: ["aus", "von", "in", "zu"], t: "他从面包店里出来。", e: "🥐", r: { logic: "强调从面包店这个建筑物的“内部”走出来，必须用 <b>aus</b>。", warn: "von 仅表示从那个方向过来，不强调是否进过店里。" }},
+            { s: ["Ich komme", "der Arbeit."], ans: "von", opts: ["von", "aus", "nach", "in"], t: "我下班过来。", e: "💼", r: { logic: "离开工作岗位、学校、课程等抽象状态或活动，统一用 <b>von</b>。", warn: "不要选 aus，除非你是从那个办公楼的物理结构里钻出来。" }},
+            { s: ["Wann fährst du", "Berlin?"], ans: "nach", opts: ["nach", "zu", "an", "auf"], t: "你什么时候去柏林？", e: "🐻", r: { logic: "城市名作为目的地，无论距离多远，介词固定使用 <b>nach</b>。", warn: "记住：nach + 城市名/无冠词国家名。" }},
+            { s: ["Wir gehen", "den Park."], ans: "in", opts: ["in", "zu", "nach", "auf"], t: "我们去公园。", e: "🌳", r: { logic: "公园在德语中通常被视为一个有围栏的立体空间，进入目的地用 <b>in + Akkusativ</b>。", warn: "auf 只能用于极少数特定的开放式广场。" }},
+            { s: ["Komm bitte", "mir!"], ans: "zu", opts: ["zu", "nach", "in", "an"], t: "请到我这儿来！", e: "🙋‍♂️", r: { logic: "向人（代词或名字）移动，目的地介词永远是 <b>zu</b>。", warn: "绝对不能说 komm nach mir。" }},
+            { s: ["Sie geht", "den Supermarkt."], ans: "in", opts: ["in", "zu", "nach", "an"], t: "她去超市。", e: "🛒", r: { logic: "进入超市建筑内部购物，目的地用 <b>in + Akkusativ</b>。", warn: "zu 也常用，但 in 表达“进店”的意图更明显。" }},
+            { s: ["Ich stelle den Stuhl", "die Ecke."], ans: "in", opts: ["in", "an", "auf", "zu"], t: "我把椅子放到墙角。", e: "🪑", r: { logic: "墙角（内部拐角）在德语中被视为一个可以容纳物体的立体空间，用 <b>in + Akk.</b>。", warn: "an 只能用于外部转角（如街道拐角外侧）。" }},
+            { s: ["Fährst du mit", "den See?"], ans: "an", opts: ["an", "in", "nach", "zu"], t: "你跟我一起去湖边吗？", e: "⛵", r: { logic: "去湖泊、河流等水域的岸边，目的地用 <b>an + Akkusativ</b>。", warn: "in den See 意味着你要跳下水里游泳。" }},
+            { s: ["Er kommt ursprünglich", "Berlin."], ans: "aus", opts: ["aus", "von", "nach", "in"], t: "他原籍来自柏林。", e: "🏙️", r: { logic: "表达籍贯、来源地、出身，介词必须用 <b>aus</b>。", warn: "von 只是暂时的方向来源，aus 才是血缘/原籍的来源。" }},
+            { s: ["Wir fliegen morgen", "die USA."], ans: "in", opts: ["in", "nach", "zu", "an"], t: "我们明天飞往美国。", e: "🗽", r: { logic: "复数国家（die USA）或有性冠词的国家，目的地必须用 <b>in + Akkusativ</b>。", warn: "这是 A2 考试的必考点，千万别被 nach 给骗了！" }},
+            { s: ["Gehen wir heute", "die Bibliothek?"], ans: "in", opts: ["in", "zu", "nach", "an"], t: "我们今天去图书馆吗？", e: "📚", r: { logic: "进入图书馆内部，强调空间进入，用 <b>in + Akkusativ</b>。", warn: "zu 强调的是“前往那个机构”。" }},
+            { s: ["Er wartet", "der Haltestelle."], ans: "an", opts: ["an", "in", "auf", "zu"], t: "他在车站等我。", e: "🚌", r: { logic: "车站在空间上被视为一个“接触点”，静止态用 <b>an + Dativ</b>。", warn: "不要用 in，你不在车站建筑物的内部墙体里。" }},
+            { s: ["Ich muss jetzt", "die Uni."], ans: "in", opts: ["in", "zu", "nach", "an"], t: "我现在得去大学。", e: "🎓", r: { logic: "去大学上课或办事，习惯上将大学视为一个功能性空间，用 <b>in + Akkusativ</b>。", warn: "zu 也可以，但在学生日常口语中，in 的频率更高。" }},
+            { s: ["Wir gehen", "den Balkon."], ans: "auf", opts: ["auf", "in", "an", "zu"], t: "我们去阳台。", e: "☕", r: { logic: "阳台属于建筑向外延伸的开放式表面，目的地用 <b>auf + Akkusativ</b>。", warn: "in 只能用于封闭的阳台（冬日花园式）。" }},
+            { s: ["Kommst du mit", "die Party?"], ans: "auf", opts: ["auf", "in", "zu", "nach"], t: "你跟我们一起去派对吗？", e: "🥳", r: { logic: "参加社交活动、派对、庆典，目的地习惯用 <b>auf + Akkusativ</b>。", warn: "这是非常地道的表达，虽然 zu 也没错，但 auf 更有活力。" }},
+            { s: ["Leg das Buch", "den Tisch."], ans: "auf", opts: ["auf", "an", "in", "zu"], t: "把书放到桌子上。", e: "📖", r: { logic: "放在物体的水平上方表面，位移用 <b>auf + Akkusativ</b>。", warn: "an 则是靠在桌子边上。" }}
+        ];
+
+        let cur = 0, gameList = [];
+
+        function init() {
+            gameList = [...questDB].sort(() => Math.random() - 0.5);
+            render();
+        }
+
+        function render() {
+            const q = gameList[cur];
+            document.getElementById('bar').style.width = `${(cur / gameList.length) * 100}%`;
+            document.getElementById('num').innerText = `${String(cur + 1).padStart(2, '0')} / ${gameList.length}`;
+            
+            const box = document.getElementById('quiz-box');
+            box.classList.remove('slide-in');
+            void box.offsetWidth; 
+            box.classList.add('slide-in');
+
+            document.getElementById('emoji').innerText = q.e;
+            document.getElementById('sentence').innerHTML = `
+                <span>${q.s[0]}</span>
+                <div id="bracketBox" class="bracket-wrapper">
+                    <span class="bracket-left">(</span>
+                    <span id="blank" class="blank-content">?</span>
+                    <span class="bracket-right">)</span>
+                </div>
+                <span>${q.s[1] || ''}</span>
+            `;
+            document.getElementById('translation').innerText = q.t;
+
+            const optArea = document.getElementById('options');
+            optArea.innerHTML = "";
+            [...q.opts].sort(() => Math.random() - 0.5).forEach((opt, i) => {
+                const card = document.createElement('div');
+                card.className = `option-card opt-${i}`;
+                card.innerText = opt;
+                card.onclick = () => check(opt);
+                optArea.appendChild(card);
+            });
+        }
+
+        function check(choice) {
+            const q = gameList[cur];
+            const blank = document.getElementById('blank');
+            const box = document.getElementById('bracketBox');
+            blank.innerText = choice;
+
+            if (choice === q.ans) {
+                box.classList.add('is-correct');
+                const end = Date.now() + 600;
+                (function frame() {
+                    confetti({ particleCount: 4, angle: 60, spread: 60, origin: { x: 0 }, colors: ['#10B981'] });
+                    confetti({ particleCount: 4, angle: 120, spread: 60, origin: { x: 1 }, colors: ['#34D399'] });
+                    if (Date.now() < end) requestAnimationFrame(frame);
+                }());
+                
+                setTimeout(() => {
+                    cur++;
+                    if (cur < gameList.length) render();
+                    else document.getElementById('winModal').style.display = 'flex';
+                }, 3000); 
+            } else {
+                showError(choice, q);
+            }
+        }
+
+        function showError(choice, q) {
+            const fb = document.getElementById('errorFeedback');
+            fb.innerHTML = `
+                <div class="bg-red-50 p-6 rounded-3xl border border-red-100">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="text-slate-400 text-xs font-black uppercase tracking-widest">Wrong</span>
+                        <span class="text-red-500 font-black line-through text-lg">${choice}</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-slate-400 text-xs font-black uppercase tracking-widest">Correct</span>
+                        <span class="text-emerald-600 font-black text-2xl animate-pulse">${q.ans}</span>
+                    </div>
+                </div>
+
+                <div class="space-y-4 pt-2 text-left">
+                    <div>
+                        <span class="tag tag-logic">语法逻辑</span>
+                        <p class="text-slate-700 text-[15px] font-bold leading-relaxed">${q.r.logic}</p>
+                    </div>
+                    <div>
+                        <span class="tag tag-warn">避坑指南</span>
+                        <p class="text-slate-600 text-[14px] font-medium italic border-l-4 border-orange-200 pl-3">${q.r.warn}</p>
+                    </div>
+                </div>
+            `;
+            document.getElementById('errorModal').style.display = 'flex';
+        }
+
+        function closeError() {
+            document.getElementById('errorModal').style.display = 'none';
+            document.getElementById('blank').innerText = "?";
+        }
+
+        init();
+        document.oncontextmenu = () => false;
+    </script>
+</body>
+</html>
