@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>德语 A2 闯关 - 不定代词训练营</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&family=Outfit:wght@600;800&display=swap');
+        
+        :root { --bg-color: #F8FAFC; }
+
+        html, body { height: 100vh; width: 100vw; margin: 0; padding: 0; overflow: hidden; background: var(--bg-color); font-family: 'Outfit', 'Noto Sans SC', sans-serif; }
+        .app-container { width: 100%; max-width: 480px; height: 100%; margin: 0 auto; display: flex; flex-direction: column; background: white; position: relative; }
+
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #F59E0B, #3B82F6); border-radius: 99px; transition: width 0.8s cubic-bezier(0.34, 1.56, 0.64, 1); }
+
+        @keyframes subtleFloat {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+            100% { transform: translateY(0px); }
+        }
+
+        .question-card { background: #FFFFFF; border: 2px solid #F1F5F9; border-radius: 40px; padding: 35px 28px; box-shadow: 0 10px 30px rgba(0,0,0,0.02); text-align: left; }
+        .breathing-icon { font-size: 42px; margin-bottom: 20px; animation: subtleFloat 4s infinite ease-in-out; text-align: center; width: 100%; display: block; }
+
+        .speech-content { line-height: 1.5; font-size: 22px; font-weight: 800; color: #1E293B; letter-spacing: -0.2px; }
+        
+        .bracket-wrapper { display: inline-flex; align-items: center; color: #3B82F6; vertical-align: baseline; }
+        .bracket-edge { color: #CBD5E1; opacity: 0.6; }
+        .blank-content { min-width: 65px; text-align: center; border-bottom: 3px solid #E2E8F0; padding: 0 4px; transition: all 0.3s; }
+        .is-correct .blank-content { color: #10B981; border-color: transparent; }
+
+        .translation-area { margin-top: 25px; padding-top: 20px; border-top: 1px solid #F1F5F9; }
+        .trans-p { font-size: 15px; font-weight: 700; color: #94A3B8; line-height: 1.5; }
+
+        .opt-btn { border-radius: 20px; transition: all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275); cursor: pointer; padding: 20px; font-weight: 800; font-size: 17px; text-align: center; border: 1px solid transparent; }
+        .opt-btn:active { transform: scale(0.95); }
+
+        .modal { position: fixed; inset: 0; background: rgba(30, 41, 59, 0.9); backdrop-filter: blur(8px); display: none; align-items: center; justify-content: center; z-index: 1000; padding: 24px; }
+        
+        .modal-content { 
+            background: white; 
+            border-radius: 45px; 
+            width: 100%; 
+            max-width: 400px; 
+            padding: 40px; 
+            box-shadow: 0 25px 50px rgba(0,0,0,0.2); 
+            position: relative; 
+            overflow: hidden; 
+            max-height: 80vh; 
+            display: flex;
+            flex-direction: column;
+        }
+
+        .scrollable-body { 
+            overflow-y: auto; 
+            flex-grow: 1; 
+            padding-right: 10px;
+            margin-bottom: 15px;
+        }
+
+        .scrollable-body::-webkit-scrollbar { width: 4px; }
+        .scrollable-body::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 10px; }
+
+        .btn-large { width: 100%; padding: 22px; border-radius: 24px; font-weight: 900; font-size: 18px; transition: all 0.2s; flex-shrink: 0; box-shadow: 0 8px 16px rgba(0,0,0,0.05); }
+        .btn-large:active { transform: scale(0.96); }
+    </style>
+</head>
+<body>
+
+    <div class="app-container">
+        <header class="pt-12 px-8 flex-none">
+            <div class="flex items-center gap-5">
+                <button onclick="location.href='map.html'" class="w-11 h-11 flex items-center justify-center rounded-2xl bg-slate-50 active:scale-90"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="3"><path d="M15 18l-6-6 6-6"/></svg></button>
+                <div class="flex-1">
+                    <div class="h-2.5 bg-slate-100 rounded-full p-0.5">
+                        <div id="bar" class="progress-fill" style="width: 0%"></div>
+                    </div>
+                    <div class="flex justify-between mt-2 px-1">
+                        <span id="num" class="text-[11px] font-black text-blue-600">01 / 20</span>
+                        <span class="text-[10px] font-black text-slate-300 tracking-[0.2em]">ZIEL</span>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <main class="flex-1 flex flex-col px-8 justify-center pb-12">
+            <div class="question-card">
+                <span id="emoji" class="breathing-icon">💡</span>
+                <div id="questionBody" class="speech-content"></div>
+                <div id="translation" class="translation-area"></div>
+            </div>
+            <div id="options" class="grid grid-cols-2 gap-4 mt-10"></div>
+        </main>
+    </div>
+
+    <div id="errorModal" class="modal">
+        <div class="modal-content">
+            <div class="absolute top-0 left-0 w-full h-2 bg-blue-600"></div>
+            
+            <div class="flex items-center mb-6 flex-none">
+                <div class="w-14 h-14 bg-blue-50 rounded-2xl flex items-center justify-center mr-5 text-3xl shadow-sm">👩‍🏫</div>
+                <div>
+                    <h3 class="text-xl font-black text-slate-800">刘老师深度解析</h3>
+                    <p class="text-[10px] font-black text-blue-500 tracking-[0.2em] uppercase">Grammatik-Check</p>
+                </div>
+            </div>
+
+            <div class="scrollable-body">
+                <div id="errorFeedback" class="space-y-5"></div>
+            </div>
+
+            <button onclick="closeError()" class="btn-large bg-slate-900 text-white">记住了，继续挑战</button>
+        </div>
+    </div>
+
+    <div id="winModal" class="modal">
+        <div class="modal-content text-center">
+            <div class="w-24 h-24 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-[35px] flex items-center justify-center text-5xl mx-auto mb-8 shadow-2xl shadow-blue-200">🏁</div>
+            <h3 class="text-2xl font-black text-slate-900 mb-3">刘老师：Ausgezeichnet!</h3>
+            <p class="text-slate-400 mb-10 font-bold text-base leading-relaxed">恭喜通关！不定代词的“虚实逻辑”你已经掌握得非常扎实了。</p>
+            <button onclick="location.href='map.html'" class="btn-large bg-blue-600 text-white shadow-xl shadow-blue-200">确定并返回地图</button>
+        </div>
+    </div>
+
+    <script>
+        const questDB = [
+            { text:'Hallo! Ist da ', blank:true, suffix:'?', ans:"jemand", opts:["jemand","niemand","etwas","nichts"], t:['有人在吗？'], e:"📞", r:"指代“不确定的某人”用 jemand。作为句子的第一格主语，谓语动词 ist 使用单数。" },
+            { text:'Ich sehe ', blank:true, suffix:' im Garten. Er ist leer.', ans:"niemanden", opts:["niemanden","niemand","etwas","alles"], t:['花园里没看见人。它是空的。'], e:"🏡", r:"【格位严谨】sehen 要求接第四格（Akkusativ）。niemand 的第四格标准形式是 niemanden。因为花园是空的，语义选否定。" },
+            { text:'Möchtest du ', blank:true, suffix:' trinken?', ans:"etwas", opts:["etwas","nichts","alles","niemand"], t:['你想喝点什么吗？'], e:"☕", r:"在询问或提议某样具体事物时，etwas 是最基础的选择，指代一个不具体但存在的“东西”。" },
+            { text:'Ich habe heute ', blank:true, suffix:' gegessen.', ans:"nichts", opts:["nichts","etwas","alles","jemand"], t:['我今天什么都没吃。'], e:"🍽️", r:"表示“完全没有、零”的状态，用 nichts。不定代词 nichts 没有词尾变化，永远保持原形。" },
+            { text:'Hast du ', blank:true, suffix:' gesehen?', ans:"jemanden", opts:["jemanden","jemand","alles","nichts"], t:['你看见谁了吗？'], e:"👀", r:"【格位严谨】sehen 要求第四格宾语。jemand 的第四格标准规范写法是 jemanden（词尾 -en）。" },
+            { text:'Hier ist ', blank:true, suffix:' für dich.', ans:"etwas", opts:["etwas","nichts","niemand","alles"], t:['这儿有件东西是给你的。'], e:"🎁", r:"肯定句指代一个包裹或物件，用 etwas。nichts 会让句子语义变成“这儿没东西给你”。" },
+            { text:'Er sagt ', blank:true, suffix:'. Er ist so leise.', ans:"nichts", opts:["nichts","etwas","alles","jemand"], t:['他什么也没说。他太安静了。'], e:"🤐", r:"sagen 搭配 nichts 指代“没说出任何话”。leise（安静）是判定此题需要否定的关键逻辑。" },
+            { text:'Sind ', blank:true, suffix:' hier?', ans:"alle", opts:["alle","alles","etwas","nichts"], t:['大家都在这儿吗？'], e:"👥", r:"指代“复数的所有人”用 alle。注意：alles 仅用于指代“所有的事情或内容（物）”。" },
+            { text:'Ich verstehe ', blank:true, suffix:'.', ans:"alles", opts:["alles","alle","jemand","etwas"], t:['我全懂了。'], e:"✅", r:"当表示理解了“全部内容/事情”时，使用中性不定代词 alles，它总结了前面提到的整体。" },
+            { text:'Ich habe ', blank:true, suffix:' gehört. Was war das?', ans:"etwas", opts:["etwas","nichts","jemand","niemand"], t:['我刚才听到了点动静。那是什么？'], e:"👂", r:"既然发问了，说明听到了某种声响。etwas 表示“某些动静/东西”，用于肯定句。" },
+            { text:'Im Haus ist ', blank:true, suffix:'. Es ist dunkel.', ans:"niemand", opts:["niemand","jemand","etwas","alles"], t:['屋里没人。漆黑一片。'], e:"🏠", r:"“Dunkel”且没有灯光通常暗示无人。niemand 作为否定代词，语法功能等同于主语，谓语用单数。" },
+            { text:'Kann mir ', blank:true, suffix:' helfen?', ans:"jemand", opts:["jemand","niemand","etwas","nichts"], t:['有人能帮帮我吗？'], e:"🆘", r:"寻求不确定人选的帮助，使用 jemand。这是德语请求帮助最通用的 A2 表达方式。" },
+            { text:'Ich suche ', blank:true, suffix:' Neues.', ans:"etwas", opts:["etwas","alles","nichts","jemand"], t:['我正在找点新花样。'], e:"✨", r:"不定代词 etwas 后面常接大写的形容词（如 Neues），表示“某些……的新鲜事物”。" },
+            { text:'Hast du ', blank:true, suffix:' gefunden?', ans:"etwas", opts:["etwas","nichts","jemand","alle"], t:['你找到什么了吗？'], e:"🔍", r:"在开放式提问中询问“是否有所收获”，用 etwas。它是对“物”的泛指。" },
+            { text:'Hier kennt mich ', blank:true, suffix:'.', ans:"niemand", opts:["niemand","jemand","nichts","alles"], t:['这儿没人认识我。'], e:"👤", r:"表达“零人认识我”的否定逻辑，使用 niemand。它在句中充当第一格主语。" },
+            { text:'Ist ', blank:true, suffix:' fertig?', ans:"alles", opts:["alles","alle","etwas","nichts"], t:['一切都准备好了吗？'], e:"🏁", r:"询问事情的“整体进度”完成情况，固定用法是 alles。注意 alle 通常指“大家”。" },
+            { text:'Ich brauche ', blank:true, suffix:'.', ans:"nichts", opts:["nichts","etwas","alles","jemand"], t:['我什么都不需要。'], e:"🚫", r:"拒绝一切服务或物品时的果断表达。nichts 否定了 brauchen 所指代的全部对象。" },
+            { text:'Da ist ', blank:true, suffix:' an der Tür.', ans:"jemand", opts:["jemand","etwas","alles","niemand"], t:['门口有人。'], e:"🚪", r:"指代一个未知的、正在门口的人，用 jemand。注意谓语动词用单数 ist。" },
+            { text:'Ich kaufe ', blank:true, suffix:'. Ich habe kein Geld.', ans:"nichts", opts:["nichts","etwas","alles","niemand"], t:['我什么都不买。我没钱。'], e:"🛍️", r:"【A2 核心句型】表示“买零个东西”，用 nichts 作宾语。逻辑对应后半句的“没有钱”。" },
+            { text:'Er hat ', blank:true, suffix:' gelernt.', ans:"nichts", opts:["nichts","etwas","alles","jemand"], t:['他什么也没学。'], e:"📖", r:"评价学习成果为空，使用 nichts。它位于动词之后，充当直接宾语（第四格）。" }
+        ];
+
+        let cur = 0, gameList = [];
+        const colors = [
+            {bg:'#E2E8F0', text:'#475569', border:'#CBD5E1'}, 
+            {bg:'#FCE7F3', text:'#BE185D', border:'#FBCFE8'}, 
+            {bg:'#ECFDF5', text:'#047857', border:'#D1FAE5'}, 
+            {bg:'#FEF3C7', text:'#B45309', border:'#FDE68A'}  
+        ];
+
+        function init() {
+            gameList = [...questDB].sort(() => Math.random() - 0.5);
+            render();
+        }
+
+        function render() {
+            const q = gameList[cur];
+            document.getElementById('bar').style.width = `${((cur + 1) / gameList.length) * 100}%`;
+            document.getElementById('num').innerText = `${String(cur + 1).padStart(2, '0')} / ${gameList.length}`;
+            document.getElementById('emoji').innerText = q.e;
+            
+            const transArea = document.getElementById('translation');
+            transArea.innerHTML = q.t.map(line => `<div class="trans-p">${line}</div>`).join('');
+
+            const qBody = document.getElementById('questionBody');
+            qBody.innerHTML = `${q.text}<span id="bracketBox" class="bracket-wrapper"><span class="bracket-edge">(</span><span id="blank" class="blank-content">?</span><span class="bracket-edge">)</span></span>${q.suffix || ''}`;
+
+            const optArea = document.getElementById('options');
+            optArea.innerHTML = "";
+            [...q.opts].sort(() => Math.random() - 0.5).forEach((opt, idx) => {
+                const color = colors[idx % colors.length];
+                const btn = document.createElement('div');
+                btn.className = "opt-btn";
+                btn.style.backgroundColor = color.bg; btn.style.color = color.text; btn.style.borderColor = color.border;
+                btn.innerText = opt; btn.onclick = () => check(opt);
+                optArea.appendChild(btn);
+            });
+        }
+
+        function celebrate() {
+            confetti({ particleCount: 100, spread: 70, origin: { y: 0.6 }, colors: ['#F59E0B', '#3B82F6', '#10B981'] });
+        }
+
+        function check(choice) {
+            const q = gameList[cur];
+            const blank = document.getElementById('blank');
+            const box = document.getElementById('bracketBox');
+            blank.innerText = choice;
+
+            if (choice === q.ans) {
+                box.classList.add('is-correct');
+                celebrate();
+                setTimeout(() => {
+                    cur++;
+                    if (cur < gameList.length) render();
+                    else document.getElementById('winModal').style.display = 'flex';
+                }, 3000); 
+            } else {
+                showError(choice, q);
+            }
+        }
+
+        function showError(choice, q) {
+            const fb = document.getElementById('errorFeedback');
+            fb.innerHTML = `
+                <div class="bg-slate-50 p-7 rounded-3xl border border-slate-100 mb-2 text-center">
+                    <div class="flex items-center justify-center gap-8">
+                        <span class="text-rose-400 line-through font-black text-2xl">${choice}</span>
+                        <span class="text-slate-300">→</span>
+                        <span class="text-blue-600 font-black text-4xl animate-pulse">${q.ans}</span>
+                    </div>
+                </div>
+                <div class="text-slate-600 text-[16px] font-bold leading-relaxed px-2 text-left">
+                    ${q.r}
+                </div>
+            `;
+            document.getElementById('errorModal').style.display = 'flex';
+        }
+
+        function closeError() {
+            document.getElementById('errorModal').style.display = 'none';
+            document.getElementById('blank').innerText = "?";
+        }
+
+        init();
+        document.oncontextmenu = () => false;
+    </script>
+</body>
+</html>
