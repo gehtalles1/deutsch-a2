@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>刘老师德语课 - 租房逻辑强化</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+SC:wght@400;700;900&display=swap');
+        html, body { min-height: 100%; background: #FFF7ED; font-family: 'Inter', 'Noto Sans SC', sans-serif; margin: 0; padding: 0; }
+        .app-container { background: #FFFFFF; width: 100%; max-width: 430px; min-height: 100vh; display: flex; flex-direction: column; margin: 0 auto; position: relative; }
+        .reading-box { background: linear-gradient(135deg, #FFEDD5 0%, #FED7AA 100%); border-radius: 18px; padding: 15px 20px; border: 3px solid #F97316; margin-bottom: 15px; }
+        .text-reading { font-size: 14px; line-height: 1.5; color: #7C2D12; font-weight: 700; }
+        .option-box { transition: all 0.2s; border: 2px solid #E2E8F0; cursor: pointer; border-radius: 14px; background: #FFF; font-size: 13px; padding: 10px 16px !important; color: #475569; font-weight: 700; margin-bottom: 8px; }
+        .selected-orange { border-color: #F97316 !important; background: #FFF7ED !important; color: #C2410C !important; border-width: 3px !important; }
+        .correct-box { border-color: #059669 !important; background: #ECFDF5 !important; color: #064E3B !important; border-width: 3px !important; }
+        .wrong-box { border-color: #E11D48 !important; background: #FFF1F2 !important; color: #881337 !important; border-width: 3px !important; }
+        .reason-area { border-radius: 12px; padding: 12px; margin-top: 15px; margin-bottom: 100px; background: #FFF7ED; border-left: 5px solid #F97316; display: none; }
+        .reason-title { font-weight: 900; color: #9A3412; font-size: 12px; margin-bottom: 4px; }
+        .reason-item { font-size: 12px; color: #7C2D12; line-height: 1.6; margin-bottom: 10px; }
+        .safe-footer { position: sticky; bottom: 0; padding: 15px 24px calc(15px + env(safe-area-inset-bottom)); background: linear-gradient(to top, white 80%, rgba(255,255,255,0)); border-top: 1px solid #F1F5F9; z-index: 50; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="px-7 pt-6 pb-2 flex justify-between items-center">
+            <button onclick="location.href='main.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-orange-50 border-2 border-orange-100 shadow-sm active:scale-90 transition-transform">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#F97316" stroke-width="3"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <span id="page-info" class="text-[13px] font-black text-orange-400 tracking-tighter">1 / 20</span>
+        </header>
+        <main class="flex-1 px-7 py-4" id="content-area"></main>
+        <footer class="safe-footer">
+            <button id="action-button" disabled onclick="handleSubmit()" class="w-full py-4 bg-orange-700 text-white rounded-[22px] font-black text-[15px] shadow-2xl active:scale-95 transition-all opacity-50">Prüfen</button>
+        </footer>
+    </div>
+
+<script>
+    const quizData = [
+        { text: "🛋️ Möbel-Rabatt: Wir ziehen um und verkaufen alles! Unser Sofa ist erst zwei Jahre alt und sieht aus wie neu. Den Esstisch und die vier Stühle verschenken wir, wenn Sie das Sofa kaufen.", q1: "Man muss für die Stühle bezahlen.", a1: "FALSCH", q2: "Was bekommt man kostenlos dazu?", opts: ["Das Sofa", "Tisch und Stühle", "Alle Möbel"], ans2: "Tisch und Stühle", r1: "文中说如果买沙发，桌椅就免费送。<br><b>【背词】verschenken 赠送；Stühle 椅子</b>", r2: "逻辑陷阱：并非全场免费，而是买A送B。<br><b>【背词】wenn 如果；kostenlos 免费</b>" },
+        { text: "📦 Umzugshilfe: Hallo Jan, ich habe den Kleiderschrank schon verkauft. Aber die Regale sind so schwer, dass ich sie nicht allein tragen kann. Kannst du morgen helfen?", q1: "Jan hilft morgen beim Transport vom Schrank.", a1: "FALSCH", q2: "Welches Problem hat die Person?", opts: ["Der Schrank ist zu schwer", "Sie hat keine Regale", "Die Regale sind zu schwer"], ans2: "Die Regale sind zu schwer", r1: "逻辑干扰：衣柜已经卖了，不需要搬了。<br><b>【背词】schon 已经；verkauft 卖掉</b>", r2: "逻辑陷阱：由于没有衣柜了，需要帮忙的是架子。<br><b>【背词】allein 独自；tragen 搬运</b>" },
+        { text: "🏢 Hausordnung: Liebe Mieter, bitte stellen Sie Ihre Fahrräder nur in den Fahrradkeller. Der Flur ist ein Rettungsweg und muss immer frei bleiben. Wer sein Rad im Flur parkt, bekommt Ärger.", q1: "Man darf das Fahrrad kurz im Flur parken.", a1: "FALSCH", q2: "Warum darf kein Fahrrad im Flur stehen?", opts: ["Weil kein Platz ist", "Wegen der Sicherheit (Rettungsweg)", "Weil es dort schmutzig wird"], ans2: "Wegen der Sicherheit (Rettungsweg)", r1: "严禁停放，必须保持清空。<br><b>【背词】frei 腾空/清空；bleiben 保持</b>", r2: "逻辑考核：不是因为没地方或脏，而是因为它是逃生通道。<br><b>【背词】Rettungsweg 逃生通道；Sicherheit 安全</b>" },
+        { text: "🚿 Badezimmer: In der neuen Wohnung gibt es nur eine Dusche. Das ist schade, denn ich bade sehr gern. Aber das Bad hat ein Fenster, das ist mir wichtig.", q1: "Die Person ist mit der Dusche sehr glücklich.", a1: "FALSCH", q2: "Was fehlt der Person in der Wohnung?", opts: ["Eine Dusche", "Ein Fenster", "Eine Badewanne"], ans2: "Eine Badewanne", r1: "逻辑干扰：原文说“真可惜（schade）”，说明不满意。<br><b>【背词】schade 可惜；glücklich 高兴</b>", r2: "逻辑陷阱：她喜欢泡澡，但只有淋浴，所以缺的是浴缸。<br><b>【背词】fehlen 缺少；Badewanne 浴缸</b>" },
+        { text: "🧹 Putzplan: Herr Weber hat letzte Woche die Treppe geputzt. Diese Woche bin ich dran, aber ich habe keine Zeit. Frau Müller aus dem Erdgeschoss macht es für mich.", q1: "Frau Müller putzt diese Woche die Treppe.", a1: "RICHTIG", q2: "Wer war letzte Woche mit Putzen dran?", opts: ["Frau Müller", "Herr Weber", "Ich"], ans2: "Herr Weber", r1: "逻辑代换：原本该“我”扫，但穆勒太太替我做了。<br><b>【背词】dran sein 轮到某人；Erdgeschoss 底层</b>", r2: "时间轴逻辑：Weber是上周，穆勒太太是本周。<br><b>【背词】letzte Woche 上周；geputzt 打扫</b>" },
+        { text: "🌡️ Heizkosten: Unsere Heizung ist alt und verbraucht viel Energie. Wir heizen nur das Wohnzimmer. In der Küche und im Schlafzimmer ist es immer kalt.", q1: "In allen Zimmern ist es warm.", a1: "FALSCH", q2: "Warum ist es in der Küche kalt?", opts: ["Weil die Heizung kaputt ist", "Weil sie dort nicht heizen", "Weil das Fenster offen ist"], ans2: "Weil sie dort nicht heizen", r1: "只有客厅暖和，其他地方都冷。<br><b>【背词】warm 暖和；immer 总是</b>", r2: "逻辑诱导：冷不是因为坏了或开窗，而是因为主动不供暖。<br><b>【背词】heizen 取暖；verbrauchen 消耗</b>" },
+        { text: "📞 Vermieter: Ich versuche seit zwei Tagen, meinen Vermieter anzurufen. Er geht nie ans Telefon. Jetzt schicke ich ihm eine E-Mail, damit er von dem Schaden erfährt.", q1: "Der Vermieter hat am Telefon geantwortet.", a1: "FALSCH", q2: "Warum schreibt die Person eine E-Mail?", opts: ["Weil sie nicht gern telefoniert", "Weil sie den Vermieter nicht erreicht", "Weil sie kein Telefon hat"], ans2: "Weil sie den Vermieter nicht erreicht", r1: "尝试了两天都没接电话。<br><b>【背词】nie 从不；antworten 回答</b>", r2: "逻辑原因：联系不上（接不通）才改用邮件。<br><b>【背词】erreichen 联系上/达到；Schaden 损失/故障</b>" },
+        { text: "🐱 Haustiere: Hunde sind hier verboten. Aber wir haben Glück: Unsere Vermieterin mag Katzen. Deshalb darf unser Kater 'Leo' mit einziehen.", q1: "Die Vermieterin erlaubt alle Haustiere.", a1: "FALSCH", q2: "Wer zieht mit in die Wohnung?", opts: ["Ein Hund", "Eine Katze", "Zwei Katzen"], ans2: "Eine Katze", r1: "逻辑干扰：明确禁止狗，并非所有动物都行。<br><b>【背词】verboten 禁止；Glück 运气</b>", r2: "逻辑对应：Kater（公猫）对应 Katze，且文中提到一只 Leo。<br><b>【背词】Kater 公猫；einziehen 搬入</b>" },
+        { text: "🔑 Schlüssel: Ich stehe vor der Tür und mein Schlüssel steckt innen. Zum Glück hat mein Nachbar einen Ersatzschlüssel von mir. Ich hole ihn jetzt.", q1: "Der Schlüssel liegt in der Küche.", a1: "FALSCH", q2: "Wie kommt die Person in die Wohnung?", opts: ["Sie ruft einen Handwerker", "Sie holt den Schlüssel beim Nachbarn", "Sie macht das Fenster auf"], ans2: "Sie holt den Schlüssel beim Nachbarn", r1: "逻辑纠错：钥匙插在里面，没在厨房。<br><b>【背词】stecken 塞/插；innen 里面</b>", r2: "逻辑路径：通过邻居手中的备用钥匙进屋。<br><b>【背词】Ersatzschlüssel 备用钥匙；holen 取</b>" },
+        { text: "🌳 Garten: Wir haben keinen Balkon, aber dafür einen großen Garten. Die Kinder spielen dort oft. Wir müssen aber jeden Samstag den Rasen mähen.", q1: "Die Wohnung hat einen Balkon und einen Garten.", a1: "FALSCH", q2: "Was ist ein Nachteil (缺点) der Wohnung?", opts: ["Die Kinder sind laut", "Kein Balkon", "Der Garten ist zu klein"], ans2: "Kein Balkon", r1: "逻辑陷阱：用 Garten 抵消了没有 Balkon 的遗憾。<br><b>【背词】keinen 没有；dafür 对此/作为补偿</b>", r2: "逻辑提取：文中明确提到“没有阳台”。<br><b>【背词】Balkon 阳台；Rasen mähen 割草</b>" },
+        { text: "🏢 WG-Leben: In unserer WG teilen wir uns alles. Jeder hat ein eigenes Zimmer, aber die Küche und das Bad nutzen wir alle zusammen.", q1: "Jeder hat eine eigene Küche.", a1: "FALSCH", q2: "Was ist in der WG privat?", opts: ["Die Küche", "Das Bad", "Das Zimmer"], ans2: "Das Zimmer", r1: "厨房是共用的。<br><b>【背词】teilen 分享；eigenes 自己的</b>", r2: "逻辑区分：公共空间 vs 私人空间。<br><b>【背词】zusammen 一起；privat 私人的</b>" },
+        { text: "💡 Strom: Wir bezahlen monatlich 60 Euro für Strom. Das ist viel Geld. Deshalb machen wir abends jetzt immer die Stehlampe an und nicht das große Licht.", q1: "Die Person möchte Geld sparen.", a1: "RICHTIG", q2: "Wie spart die Person Strom?", opts: ["Sie benutzt kein Licht mehr", "Sie benutzt eine kleine Lampe", "Sie bezahlt weniger Geld"], ans2: "Sie benutzt eine kleine Lampe", r1: "为了省钱才改变用灯习惯。<br><b>【背词】sparen 节省；monatlich 每月</b>", r2: "逻辑细节：用落地灯代替大灯，而非不用灯。<br><b>【背词】Stehlampe 落地灯；anstatt 而不是</b>" },
+        { text: "📦 Nachbar-Paket: Hallo, ich habe Ihr Paket angenommen. Es war zu schwer für den Briefkasten. Bitte holen Sie es heute bis 20:00 Uhr bei mir ab.", q1: "Das Paket liegt im Briefkasten.", a1: "FALSCH", q2: "Wann kann die Person das Paket abholen?", opts: ["Morgen", "Heute Abend", "Um 21:00 Uhr"], ans2: "Heute Abend", r1: "逻辑纠错：因为太重放不下，所以没在信箱里。<br><b>【背词】angenommen 接收；Briefkasten 信箱</b>", r2: "时间逻辑：今天20点前，即今晚。<br><b>【背词】abholen 取；heute 今天</b>" },
+        { text: "🏠 Einzug: Die Wohnung ist leer. Ich brauche noch alles: ein Bett, einen Schrank and eine Lampe. Nur einen alten Tisch habe ich schon von meiner Mutter.", q1: "Die Person hat schon ein Bett.", a1: "FALSCH", q2: "Welches Möbelstück besitzt die Person schon?", opts: ["Einen Schrank", "Einen Tisch", "Nichts"], ans2: "Einen Tisch", r1: "床还在“需要”清单里，还没买。<br><b>【背词】leer 空的；brauchen 需要</b>", r2: "逻辑区分：唯一已有的是妈妈送的旧桌子。<br><b>【背词】schon 已经；besitzen 拥有</b>" },
+        { text: "🖼️ Renovierung: Die Wände im Wohnzimmer sind weiß, aber sie sind schmutzig. Ich möchte sie am Wochenende neu streichen – vielleicht in Gelb.", q1: "Die Wände sind momentan gelb.", a1: "FALSCH", q2: "Warum möchte die Person streichen?", opts: ["Weil die Farbe neu ist", "Weil die Wände nicht sauber sind", "Weil sie Gelb hasst"], ans2: "Weil die Wände nicht sauber sind", r1: "现在的颜色是白色。<br><b>【背词】weiß 白色；momentan 目前</b>", r2: "逻辑因果：想粉刷是因为脏了（不干净）。<br><b>【背词】schmutzig 脏的；sauber 干净</b>" },
+        { text: "🏢 Etage: Meine Großmutter wohnt im dritten Stock. Das ist ein Problem, denn es gibt keinen Aufzug und sie kann nicht gut Treppen steigen.", q1: "Die Großmutter findet Treppensteigen gut.", a1: "FALSCH", q2: "Welches Problem hat die Wohnung?", opts: ["Sie ist im Erdgeschoss", "Es gibt keinen Fahrstuhl", "Die Oma wohnt nicht dort"], ans2: "Es gibt keinen Fahrstuhl", r1: "逻辑干扰：因为上不去楼，所以她讨厌爬楼梯。<br><b>【背词】Problem 问题；steigen 爬/上升</b>", r2: "逻辑陷阱：干扰项说在一楼，但实际在三楼。<br><b>【背词】Aufzug 电梯；Fahrstuhl 电梯（近义词）</b>" },
+        { text: "🧺 Wäsche: Ich wasche meine Kleidung immer im Waschsalon an der Ecke. In meiner Wohnung ist kein Platz für eine eigene Waschmaschine.", q1: "Die Person hat eine Waschmaschine in der Küche.", a1: "FALSCH", q2: "Wo wäscht die Person ihre Wäsche?", opts: ["In der Wohnung", "Im Keller", "Im Waschsalon"], ans2: "Im Waschsalon", r1: "屋里没地方放洗衣机。<br><b>【背词】kein Platz 没空间；eigene 自己的</b>", r2: "逻辑路径：因为屋里没地方，所以去外面洗。<br><b>【背词】Waschsalon 自助洗衣店；Ecke 拐角</b>" },
+        { text: "🗝️ Einzug: Hier ist Ihr Mietvertrag. Die Miete bezahlen Sie bitte immer am ersten Tag im Monat. Hier sind auch Ihre drei Hausschlüssel.", q1: "Man bekommt nur einen Schlüssel.", a1: "FALSCH", q2: "Wann muss man die Miete bezahlen?", opts: ["Am Ende des Monats", "Am Monatsanfang", "Alle drei Monate"], ans2: "Am Monatsanfang", r1: "给了三把钥匙。<br><b>【背词】drei 三；Mietvertrag 租赁合同</b>", r2: "时间陷阱：每月第一天即月初。<br><b>【背词】Anfang 开始；bezahlen 支付</b>" },
+        { text: "🛋️ Wohnzimmer: In meinem Wohnzimmer steht ein großes Sofa vor dem Fenster. Neben dem Sofa steht eine kleine Lampe. Ich habe keinen Fernseher.", q1: "Es gibt einen Fernseher im Wohnzimmer.", a1: "FALSCH", q2: "Wo steht die Lampe?", opts: ["Auf dem Sofa", "Neben dem Sofa", "Hinter dem Fenster"], ans2: "Neben dem Sofa", r1: "明确说没有电视机。<br><b>【背词】keinen 没有；Fernseher 电视</b>", r2: "方位逻辑考察。<br><b>【背词】neben 在...旁边；Lampe 灯</b>" },
+        { text: "📢 Party: Hallo, ich bin euer neuer Nachbar aus dem zweiten Stock. Ich feiere am Freitag meinen Einzug. Kommt ihr auch? Es gibt Pizza!", q1: "Der Nachbar feiert am Wochenende.", a1: "FALSCH", q2: "Warum gibt es eine Party?", opts: ["Wegen eines Geburtags", "Wegen des Einzugs", "Wegen der Pizza"], ans2: "Wegen des Einzugs", r1: "逻辑干扰：周五通常算工作日，非周末（周六日）。<br><b>【背词】Freitag 周五；Wochenende 周末</b>", r2: "逻辑因果：是因为搬家庆祝，而不是因为生日。<br><b>【背词】Einzug 搬入；feiern 庆祝</b>" }
+    ];
+
+    let current = 0, sRF = null, sABC = null, isVerified = false;
+    const dataList = [...quizData].sort(() => Math.random() - 0.5);
+
+    function renderQuiz(idx) {
+        current = idx; sRF = sABC = null; isVerified = false;
+        const data = dataList[current];
+        const btn = document.getElementById('action-button');
+        btn.disabled = true; btn.innerText = "Prüfen";
+        btn.className = "w-full py-4 bg-orange-700 text-white rounded-[22px] font-black text-[15px] shadow-2xl opacity-50";
+        document.getElementById('page-info').innerText = `${current + 1} / ${dataList.length}`;
+        document.getElementById('content-area').innerHTML = `
+            <div class="reading-box"><p class="text-reading">${data.text}</p></div>
+            <div class="w-full">
+                <p class="text-[14px] font-black text-slate-800 mb-3">${data.q1}</p>
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div id="rf-RICHTIG" onclick="selectRF('RICHTIG')" class="option-box text-center">RICHTIG</div>
+                    <div id="rf-FALSCH" onclick="selectRF('FALSCH')" class="option-box text-center">FALSCH</div>
+                </div>
+                <p class="text-[14px] font-black text-slate-800 mb-3">${data.q2}</p>
+                <div class="space-y-1">${data.opts.map((o, i) => `<div id="abc-${i}" onclick="selectABC('${o}', ${i})" class="option-box">${o}</div>`).join('')}</div>
+            </div>
+            <div id="reason-box" class="reason-area"><span class="reason-title">刘老师逻辑拆解</span><div id="reason-content" class="space-y-1"></div></div>`;
+        window.scrollTo(0, 0);
+    }
+
+    function selectRF(v) { if(isVerified) return; sRF = v; document.getElementById('rf-RICHTIG').className = 'option-box text-center '+(v==='RICHTIG'?'selected-orange':'text-slate-400'); document.getElementById('rf-FALSCH').className = 'option-box text-center '+(v==='FALSCH'?'selected-orange':'text-slate-400'); checkBtn(); }
+    function selectABC(v, i) { if(isVerified) return; sABC = v; Array.from(document.querySelectorAll('[id^="abc-"]')).forEach((c, idx) => c.className = 'option-box '+(idx===i?'selected-orange':'text-slate-400')); checkBtn(); }
+    function checkBtn() { if(sRF && sABC) { const btn = document.getElementById('action-button'); btn.disabled = false; btn.classList.remove('opacity-50'); } }
+
+    function handleSubmit() {
+        const btn = document.getElementById('action-button');
+        if(isVerified) {
+            if(current === dataList.length - 1) { alert("Herzlichen Glückwunsch! 成功攻克租房逻辑！"); location.href = 'main.html'; return; }
+            renderQuiz(current + 1); return;
+        }
+        isVerified = true;
+        const data = dataList[current];
+        const q1Correct = sRF === data.a1, q2Correct = sABC === data.ans2;
+
+        // Q1 变色
+        const rfRichtig = document.getElementById('rf-RICHTIG');
+        const rfFalsch = document.getElementById('rf-FALSCH');
+        if(data.a1==='RICHTIG') {
+            rfRichtig.classList.add('correct-box');
+            if(sRF === 'FALSCH') rfFalsch.classList.add('wrong-box');
+        } else {
+            rfFalsch.classList.add('correct-box');
+            if(sRF === 'RICHTIG') rfRichtig.classList.add('wrong-box');
+        }
+
+        // Q2 变色
+        Array.from(document.querySelectorAll('[id^="abc-"]')).forEach(c => {
+            if(c.innerText === data.ans2) c.classList.add('correct-box');
+            else if(c.innerText === sABC) c.classList.add('wrong-box');
+        });
+
+        if (q1Correct && q2Correct) {
+            confetti({ particleCount: 40, spread: 70, origin: { y: 0.8 }, colors: ['#F97316', '#FB923C'] });
+            btn.className = "w-full py-4 bg-emerald-600 text-white rounded-[22px] font-black text-[15px] shadow-2xl";
+        } else {
+            // 仅对做错的题目显示解析
+            let innerHtml = "";
+            if(!q1Correct) innerHtml += `<div class="reason-item">🚩 <b>Q1 解析:</b> ${data.r1}</div>`;
+            if(!q2Correct) innerHtml += `<div class="reason-item">🚩 <b>Q2 解析:</b> ${data.r2}</div>`;
+            
+            document.getElementById('reason-content').innerHTML = innerHtml;
+            document.getElementById('reason-box').style.display = 'block';
+            setTimeout(() => { window.scrollBy({ top: 150, behavior: 'smooth' }); }, 100);
+            btn.className = "w-full py-4 bg-orange-600 text-white rounded-[22px] font-black text-[15px] shadow-2xl";
+        }
+        btn.innerText = "Nächste Frage";
+    }
+    renderQuiz(0);
+</script>
+</body>
+</html>
