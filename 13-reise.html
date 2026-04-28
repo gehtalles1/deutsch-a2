@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>刘老师德语课 - 旅游酒店专项</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+SC:wght@400;700;900&display=swap');
+        html, body { height: 100%; overflow: hidden; background: #FFFBEB; font-family: 'Inter', 'Noto Sans SC', sans-serif; }
+        .app-container { background: #FFFFFF; width: 100%; max-width: 430px; height: 100vh; display: flex; flex-direction: column; margin: 0 auto; }
+        .reading-box { background: linear-gradient(135deg, #FEF3C7 0%, #FDE68A 100%); border-radius: 18px; padding: 18px 22px; border: 3px solid #F59E0B; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.1); }
+        .text-reading { font-size: 14.5px; line-height: 1.6; color: #78350F; font-weight: 700; }
+        .option-box { transition: all 0.2s; border: 2px solid #E2E8F0; cursor: pointer; border-radius: 14px; background: #FFF; font-size: 13.5px; padding: 11px 16px !important; color: #334155; font-weight: 700; }
+        .selected-blue { border-color: #D97706 !important; background: #FFFBEB !important; color: #92400E !important; border-width: 3px !important; }
+        .correct-box { border-color: #059669 !important; background: #ECFDF5 !important; color: #064E3B !important; border-width: 3px !important; }
+        .wrong-box { border-color: #E11D48 !important; background: #FFF1F2 !important; color: #881337 !important; border-width: 3px !important; }
+        .reason-area { border-radius: 12px; padding: 12px; margin-top: 10px; transition: all 0.4s ease; background: #FFFBEB; border-left: 5px solid #F59E0B; display: none; }
+        .reason-title { font-weight: 900; color: #B45309; font-size: 12px; margin-bottom: 4px; }
+        .reason-item { font-size: 12px; color: #92400E; line-height: 1.5; margin-bottom: 4px; }
+        .safe-footer { padding: 15px 24px 35px 24px; background: white; border-top: 1px solid #F1F5F9; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="px-7 pt-6 pb-2 flex justify-between items-center">
+            <button onclick="location.href='main.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-orange-50 border-2 border-orange-100 shadow-sm active:scale-90 transition-transform">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B45309" stroke-width="3"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <span id="page-info" class="text-[13px] font-black text-orange-400 tracking-tighter">1 / 20</span>
+        </header>
+        <main class="flex-1 px-7 flex flex-col justify-around overflow-hidden" id="content-area"></main>
+        <footer class="safe-footer"><button id="action-button" disabled onclick="handleSubmit()" class="w-full py-4 bg-orange-950 text-white rounded-[22px] font-black text-[15px] shadow-2xl active:scale-95 transition-all">Prüfen</button></footer>
+    </div>
+
+<script>
+    const quizData = [
+        { text: "🏨 Hotel-Check-in: Herzlich willkommen! Ihr Zimmer ist ab 15:00 Uhr bereit. Wenn Sie Ihr Gepäck früher abgeben möchten, können Sie unseren Gepäckraum im Erdgeschoss kostenlos nutzen.", q1: "Man kann sein Gepäck schon vor 15:00 Uhr im Hotel lassen.", a1: "RICHTIG", q2: "Wo befindet sich der Gepäckraum?", opts: ["Im ersten Stock", "Im Erdgeschoss", "Neben dem Restaurant"], ans2: "Im Erdgeschoss", r1: "文中说可以 'Gepäck früher abgeben'，即提前寄放。", r2: "方位词：'Erdgeschoss' 对应地面层（一楼）。" },
+        { text: "🚆 Am Bahnhof: Der Regionalexpress nach München fällt heute wegen eines Streiks aus. Fahrgäste können alle Fernzüge der Deutschen Bahn ohne Aufpreis nutzen.", q1: "Der Zug nach München fährt heute pünktlich.", a1: "FALSCH", q2: "Was dürfen die Fahrgäste tun?", opts: ["Ein neues Ticket kaufen", "Fernzüge ohne Aufpreis nutzen", "Bis morgen warten"], ans2: "Fernzüge ohne Aufpreis nutzen", r1: "核心动词：'ausfallen' 意为取消，与准点矛盾。", r2: "关键短语：'ohne Aufpreis' 意为无需补差价。" },
+        { text: "🚗 Mietwagen: Bitte geben Sie das Auto mit vollem Tank zurück. Wenn wir für Sie tanken müssen, berechnen wir eine Gebühr von 15 Euro plus die Benzinkosten.", q1: "Die Firma tankt das Auto immer kostenlos für Sie.", a1: "FALSCH", q2: "Was kostet der Service, wenn die Firma tankt?", opts: ["Nur die Benzinkosten", "15 Euro Gebühr + Benzin", "Genau 15 Euro"], ans2: "15 Euro Gebühr + Benzin", r1: "逻辑判断：文中提到 'Gebühr'，所以不是免费的。", r2: "计算逻辑：费用 = 15欧固定手续费 + 实际汽油费。" },
+        { text: "🏛️ Stadtführung: Die Tour durch die Altstadt beginnt um 10:00 Uhr am Marktplatz. Bei starkem Regen findet die Führung nicht draußen, sondern im Stadtmuseum statt.", q1: "Bei schlechtem Wetter fällt die Tour komplett aus.", a1: "FALSCH", q2: "Wo treffen sich die Leute, wenn es regnet?", opts: ["Am Marktplatz", "Im Stadtmuseum", "In der Kirche"], ans2: "Im Stadtmuseum", r1: "语法：'nicht..., sondern...' 结构表示地点变更，并非取消活动。", r2: "细节：雨天改在 'Stadtmuseum' 举行。" },
+        { text: "✈️ Flughafen: Achtung an Gate A12. Wegen technischer Probleme verzögert sich das Boarding für Flug LH204 nach Berlin um etwa 30 Minuten.", q1: "Das Flugzeug startet etwas später als geplant.", a1: "RICHTIG", q2: "Was ist der Grund für die Verspätung?", opts: ["Schlechtes Wetter", "Zu viele Passagiere", "Technische Probleme"], ans2: "Technische Probleme", r1: "词汇转换：'verzögern' (延迟) 对应 'später'。", r2: "原因提取：直接对应文中 'technische Probleme'。" },
+        { text: "🎫 Museumskarte: Mit der Stadt-Karte haben Sie freien Eintritt in 5 Museen. Außerdem können Sie 48 Stunden lang alle Busse im Zentrum kostenlos nutzen.", q1: "Man muss im Bus bezahlen, wenn man die Karte hat.", a1: "FALSCH", q2: "Wie lange gilt die Karte für den Bus?", opts: ["Einen Tag", "48 Stunden", "Eine Woche"], ans2: "48 Stunden", r1: "关键词：'kostenlos' 意味着持卡无需另外支付车费。", r2: "时间限定：明确标注为 48 小时。" },
+        { text: "🧺 Wäscheservice: Geben Sie Ihre Wäsche bis 9:00 Uhr morgens ab. Sie erhalten die saubere Kleidung noch am selben Abend zurück. Express-Service kostet 5 Euro extra.", q1: "Man bekommt die Wäsche am gleichen Tag zurück.", a1: "RICHTIG", q2: "Bis wann muss man die Kleidung abgeben?", opts: ["Bis 9:00 Uhr", "Bis Mittag", "Am Abend"], ans2: "Bis 9:00 Uhr", r1: "时间词：'am selben Abend' 指的就是同一天晚上。", r2: "截止时间：原文给出 'bis 9:00 Uhr'。" },
+        { text: "🍳 Frühstück: Buffet von 6:30 bis 10:30 Uhr. Wenn Sie vor 6:30 Uhr abreisen, bestellen Sie bitte ein Lunchpaket bis spätestens 20:00 Uhr am Vorabend.", q1: "Man kann vor 6:30 Uhr kein Frühstück im Restaurant essen.", a1: "RICHTIG", q2: "Wann muss man das Lunchpaket spätestens bestellen?", opts: ["Um 6:30 Uhr", "Am Vorabend bis 20:00 Uhr", "Bei der Abreise"], ans2: "Am Vorabend bis 20:00 Uhr", r1: "时间逻辑：餐厅 6:30 才开，早走只能吃打包好的 Lunchpaket。", r2: "限定时间：'bis 20:00 Uhr am Vorabend'。" },
+        { text: "🚲 Fahrrad: Miete kostet 12 Euro pro Tag. Ein Schloss ist inklusive. Wenn Sie das Fahrrad länger als 3 Tage mieten, bekommen Sie 20% Rabatt.", q1: "Das Schloss für das Fahrrad kostet extra Geld.", a1: "FALSCH", q2: "Ab wann bekommt man einen Rabatt?", opts: ["Ab dem 1. Tag", "Ab 2 Tagen", "Nach 3 Tagen"], ans2: "Nach 3 Tagen", r1: "词汇：'inklusive' 意为包含在租金内，不收额外费用。", r2: "条件判定：'länger als 3 Tage' (超过3天)。" },
+        { text: "🏊 Wellness: Der Pool ist für Hotelgäste kostenlos. Externe Besucher zahlen 10 Euro. Kinder unter 6 Jahren dürfen nicht in die Sauna.", q1: "Alle Leute müssen für den Pool bezahlen.", a1: "FALSCH", q2: "Wer darf nicht in die Sauna?", opts: ["Alle Kinder", "Kinder unter 6 Jahren", "Hotelgäste"], ans2: "Kinder unter 6 Jahren", r1: "身份区别：'Hotelgäste' 是免费的，'Externe' 才收费。", r2: "年龄限制：明确指明 'unter 6 Jahren'。" },
+        { text: "🧳 Gepäck: In der Economy-Class darf Ihr Koffer maximal 23 kg wiegen. Jedes Kilo mehr kostet 10 Euro Gebühr am Schalter.", q1: "Wenn der Koffer 25 kg wiegt, muss man nichts extra bezahlen.", a1: "FALSCH", q2: "Wie viel darf ein Koffer maximal ohne Gebühr wiegen?", opts: ["10 kg", "20 kg", "23 kg"], ans2: "23 kg", r1: "逻辑分析：超过 23kg 就要交费，25kg 显然超重了。", r2: "数值提取：上限为 23 kg。" },
+        { text: "🚠 Bergbahn: Wegen starkem Wind fährt die Seilbahn heute nicht. Wanderer können den Shuttle-Bus zum Gipfel nutzen. Die Fahrt dauert 20 Minuten.", q1: "Die Seilbahn fährt heute ganz normal.", a1: "FALSCH", q2: "Wie kommen die Leute heute zum Gipfel?", opts: ["Zu Fuß", "Mit der Seilbahn", "Mit dem Shuttle-Bus"], ans2: "Mit dem Shuttle-Bus", r1: "原因判定：'starker Wind' 导致 Seilbahn 停运。", r2: "替代方案：文中提到可以利用 'Shuttle-Bus'。" },
+        { text: "🥘 Restaurant: Unser Spezialitäten-Menü servieren wir nur abends von 18:00 bis 21:00 Uhr. Mittags bieten wir nur kleine Gerichte und Salate an.", q1: "Man kann das Spezialitäten-Menü auch um 13:00 Uhr essen.", a1: "FALSCH", q2: "Was gibt es am Mittag zu essen?", opts: ["Das Spezialitäten-Menü", "Kleine Gerichte", "Nichts"], ans2: "Kleine Gerichte", r1: "时间矛盾：13:00属于 Mittag，不供应晚间特餐。", r2: "细节对应：中午只提供 'kleine Gerichte'。" },
+        { text: "🛳️ Schiffstour: Die Fahrt auf dem See dauert 2 Stunden. Kinder unter 14 Jahren zahlen den halben Preis. Hunde dürfen leider nicht mit an Bord.", q1: "Man darf seinen Hund mit auf das Schiff nehmen.", a1: "FALSCH", q2: "Wie viel bezahlen Kinder unter 14 Jahren?", opts: ["Nichts", "Den vollen Preis", "Die Hälfte"], ans2: "Die Hälfte", r1: "禁令理解：'Hunde dürfen nicht' 明确禁止宠物上船。", r2: "价格计算：'halber Preis' 对应选项中的 'Die Hälfte'。" },
+        { text: "📞 Rezeption: Die Rezeption ist nachts nicht besetzt. Wenn Sie nach 22:00 Uhr ankommen, benutzen Sie bitte den Schlüsselsafe am Eingang.", q1: "In der Nacht ist niemand an der Rezeption.", a1: "RICHTIG", q2: "Was braucht man, wenn man sehr spät ankommt?", opts: ["Ein Telefon", "Den Schlüsselsafe", "Einen Mitarbeiter"], ans2: "Den Schlüsselsafe", r1: "状态点：'nicht besetzt' 意为无人值班。", r2: "工具点：深夜到达需使用钥匙保险柜 (Schlüsselsafe)。" },
+        { text: "💳 Bezahlung: Wir akzeptieren Barzahlung und Kreditkarten. Bitte beachten Sie: Zahlungen mit EC-Karte sind in unserem Hotel leider nicht möglich.", q1: "Man kann im Hotel mit der EC-Karte bezahlen.", a1: "FALSCH", q2: "Welche Zahlungsart funktioniert sicher?", opts: ["Kreditkarte", "EC-Karte", "Nur Barzahlung"], ans2: "Kreditkarte", r1: "支付限制：明确指出 EC-Karte 是 'nicht möglich' 的。", r2: "可用选项：文中提到了 Barzahlung 和 Kreditkarten。" },
+        { text: "🚶 Rundgang: Der kostenlose Stadtrundgang für Studenten findet jeden Samstag statt. Treffpunkt ist die Touristen-Information.", q1: "Studenten müssen für den Rundgang bezahlen.", a1: "FALSCH", q2: "Wann findet der Rundgang statt?", opts: ["Jeden Tag", "Immer samstags", "Nur im Sommer"], ans2: "Immer samstags", r1: "词汇：'kostenlos' 表示对学生免费。", r2: "周期：'jeden Samstag' 指每周六。" },
+        { text: "🏠 Ferienwohnung: In der Wohnung darf nicht geraucht werden. Bitte bringen Sie Ihre eigenen Handtücher mit. Bettwäsche ist vorhanden.", q1: "In der Wohnung gibt es Bettwäsche.", a1: "RICHTIG", q2: "Was müssen die Gäste selbst mitbringen?", opts: ["Bettwäsche", "Handtücher", "Einen Fernseher"], ans2: "Handtücher", r1: "物品确认：'vorhanden' 意为已提供/存在。", r2: "要求：'eigenen Handtücher mitbringen' 要求自带毛巾。" },
+        { text: "🎭 Theater: Die Vorstellung beginnt pünktlich um 19:30 Uhr. Nach dem Beginn ist kein Einlass mehr möglich. Bitte kommen Sie rechtzeitig.", q1: "Man kann auch um 19:45 Uhr noch ins Theater gehen.", a1: "FALSCH", q2: "Wann fängt das Theater an?", opts: ["Um 19:00 Uhr", "Um 19:30 Uhr", "Um 20:00 Uhr"], ans2: "Um 19:30 Uhr", r1: "规则理解：开始后 'kein Einlass' (禁止入场)，19:45 已经太晚了。", r2: "时间提取：19:30。" },
+        { text: "🚕 Sammeltaxi: Das Sammeltaxi fährt zum Flughafen, sobald 4 Personen da sind. Der Preis pro Person beträgt 10 Euro.", q1: "Das Taxi fährt auch, wenn nur eine Person da ist.", a1: "FALSCH", q2: "Wie viele Personen müssen mindestens im Taxi sein?", opts: ["2 Personen", "4 Personen", "10 Personen"], ans2: "4 Personen", r1: "语法点：'sobald' 表示一旦...就。必须凑齐 4 人才走。", r2: "数量点：明确给出 '4 Personen'。" }
+    ];
+
+    let current = 0, sRF = null, sABC = null, isVerified = false;
+    // 随机打乱题目顺序
+    const dataList = [...quizData].sort(() => Math.random() - 0.5);
+
+    function renderQuiz(idx) {
+        current = idx; sRF = sABC = null; isVerified = false;
+        const data = dataList[current];
+        const btn = document.getElementById('action-button');
+        btn.disabled = true; btn.innerText = "Prüfen";
+        btn.className = "w-full py-4 bg-orange-950 text-white rounded-[22px] font-black text-[15px] shadow-2xl";
+        document.getElementById('page-info').innerText = `${current + 1} / ${dataList.length}`;
+        document.getElementById('content-area').innerHTML = `
+            <div class="reading-box"><p class="text-reading">${data.text}</p></div>
+            <div class="w-full">
+                <p class="text-[13.5px] font-black text-slate-800 mb-2.5">${data.q1}</p>
+                <div class="grid grid-cols-2 gap-4 mb-5">
+                    <div id="rf-RICHTIG" onclick="selectRF('RICHTIG')" class="option-box text-center">RICHTIG</div>
+                    <div id="rf-FALSCH" onclick="selectRF('FALSCH')" class="option-box text-center">FALSCH</div>
+                </div>
+                <p class="text-[13.5px] font-black text-slate-800 mb-2.5">${data.q2}</p>
+                <div class="space-y-2.5">${data.opts.map((o, i) => `<div id="abc-${i}" onclick="selectABC('${o}', ${i})" class="option-box">${o}</div>`).join('')}</div>
+            </div>
+            <div id="reason-box" class="reason-area">
+                <span class="reason-title">刘老师专业解析</span>
+                <div id="reason-content" class="space-y-1"></div>
+            </div>`;
+    }
+
+    function selectRF(v) { if(isVerified) return; sRF = v; document.getElementById('rf-RICHTIG').className = 'option-box text-center '+(v==='RICHTIG'?'selected-blue':'text-slate-500'); document.getElementById('rf-FALSCH').className = 'option-box text-center '+(v==='FALSCH'?'selected-blue':'text-slate-500'); checkBtn(); }
+    function selectABC(v, i) { if(isVerified) return; sABC = v; Array.from(document.querySelectorAll('[id^="abc-"]')).forEach((c, idx) => c.className = 'option-box '+(idx===i?'selected-blue':'text-slate-500')); checkBtn(); }
+    function checkBtn() { if(sRF && sABC) document.getElementById('action-button').disabled = false; }
+
+    function handleSubmit() {
+        const btn = document.getElementById('action-button');
+        if(isVerified) {
+            if(current === dataList.length - 1) {
+                alert("Herzlichen Glückwunsch! 您已完成 A2 旅游酒店专题全部练习！");
+                location.href = 'main.html';
+                return;
+            }
+            renderQuiz(current + 1);
+            return;
+        }
+        isVerified = true;
+        const data = dataList[current];
+        const q1Correct = sRF === data.a1;
+        const q2Correct = sABC === data.ans2;
+
+        if(data.a1==='RICHTIG') document.getElementById('rf-RICHTIG').classList.add('correct-box');
+        else document.getElementById('rf-FALSCH').classList.add('correct-box');
+        Array.from(document.querySelectorAll('[id^="abc-"]')).forEach(c => {
+            if(c.innerText === data.ans2) c.classList.add('correct-box');
+            else if(c.innerText === sABC) c.classList.add('wrong-box');
+        });
+
+        // 错哪题解析哪题
+        let innerHtml = "";
+        if(!q1Correct) innerHtml += `<div class="reason-item">🚩 <b>题1解析：</b>${data.r1}</div>`;
+        if(!q2Correct) innerHtml += `<div class="reason-item">🚩 <b>题2解析：</b>${data.r2}</div>`;
+
+        if(innerHtml !== "") {
+            document.getElementById('reason-content').innerHTML = innerHtml;
+            document.getElementById('reason-box').style.display = 'block';
+            setTimeout(() => document.getElementById('reason-box').classList.add('show'), 10);
+            btn.className = "w-full py-4 bg-orange-600 text-white rounded-[22px] font-black text-[15px] shadow-2xl";
+        } else {
+            confetti({ particleCount: 40, spread: 70, origin: { y: 0.8 } });
+            btn.className = "w-full py-4 bg-emerald-600 text-white rounded-[22px] font-black text-[15px] shadow-2xl";
+        }
+        btn.innerText = "Nächste Frage";
+    }
+    renderQuiz(0);
+</script>
+</body>
+</html>
