@@ -58,6 +58,9 @@
         
         /* 激活关卡的投影逻辑 */
         .card-active { border-bottom-color: #4F46E5; }
+        
+        /* 医疗关卡特殊色调（实战类） */
+        .card-arzt { border-bottom-color: #10B981; }
     </style>
 </head>
 <body class="py-10 px-4">
@@ -131,6 +134,12 @@
                 <div class="w-12 h-12 bg-[#A5B4FC] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-lg shadow-orange-100">10</div>
                 <h3 class="text-sm font-black text-slate-800">不定代词训练营</h3>
                 <p class="text-[9px] text-slate-400 mt-1 uppercase font-bold tracking-tighter">Indefinitpronomen</p>
+            </div>
+
+            <div onclick="go('11-arzt')" class="a2-card p-5 flex flex-col items-center text-center card-active card-arzt">
+                <div class="w-12 h-12 bg-[#10B981] rounded-2xl flex items-center justify-center text-white font-black text-xl mb-3 shadow-lg shadow-emerald-100">11</div>
+                <h3 class="text-sm font-black text-emerald-900">实战：医疗篇</h3>
+                <p class="text-[9px] text-emerald-500 mt-1 uppercase font-bold tracking-tighter">Medizin im Alltag</p>
             </div>
         </main>
 
