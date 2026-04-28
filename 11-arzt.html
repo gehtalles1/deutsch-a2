@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Lius A2 Training</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+SC:wght@400;700;900&display=swap');
+        body { background: #F1F5F9; font-family: 'Inter', 'Noto Sans SC', sans-serif; display: flex; justify-content: center; }
+        .app-container { background: #FFFFFF; width: 100%; max-width: 430px; min-height: 100vh; display: flex; flex-direction: column; box-shadow: 0 0 50px rgba(0,0,0,0.05); position: relative; }
+        .reading-box { background: linear-gradient(135deg, #F0F9FF 0%, #E7F5FF 100%); border-radius: 16px; padding: 18px; border: 1px solid #BAE6FD; margin-top: 8px; }
+        .text-reading { font-size: 14px; line-height: 1.6; color: #1E293B; font-weight: 500; }
+        .option-box { transition: all 0.2s; border: 1.5px solid #F1F5F9; cursor: pointer; border-radius: 10px; background: #FFF; font-size: 13px; padding: 10px !important; }
+        .selected-blue { border-color: #3B82F6 !important; background: #EFF6FF !important; color: #1D4ED8 !important; }
+        .correct-box { border-color: #10B981 !important; background: #ECFDF5 !important; color: #065F46 !important; }
+        .wrong-box { border-color: #F43F5E !important; background: #FFF1F2 !important; color: #9F1239 !important; }
+        .reason-area { max-height: 0; opacity: 0; overflow: hidden; transition: all 0.4s ease; background: #FFFBFB; border-radius: 10px; }
+        .reason-area.show { max-height: 400px; opacity: 1; margin-top: 12px; padding: 12px; border-left: 4px solid #E11D48; }
+        .reason-title { font-weight: 900; color: #E11D48; font-size: 11px; margin-bottom: 6px; display: block; letter-spacing: 1px; }
+        .reason-item { font-size: 12px; color: #475569; line-height: 1.6; margin-bottom: 8px; }
+        .reason-label { font-weight: 800; color: #1E293B; margin-right: 4px; }
+        .safe-footer { padding: 1.2rem 2rem 2.5rem 2rem; }
+
+        /* 通关弹窗样式 */
+        #congrats-modal { display: none; position: absolute; inset: 0; background: rgba(15, 23, 42, 0.8); z-index: 100; align-items: center; justify-content: center; padding: 2rem; }
+        .modal-card { background: white; border-radius: 24px; padding: 2.5rem 2rem; text-align: center; width: 100%; transform: scale(0.9); opacity: 0; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .modal-card.show { transform: scale(1); opacity: 1; }
+        .badge { width: 80px; height: 80px; background: #FEF3C7; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; font-size: 40px; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="px-8 pt-6 pb-2 flex justify-between items-center">
+            <button onclick="window.location.href='main.html'" class="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-50 border border-slate-100">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <span id="page-info" class="text-[12px] font-black text-slate-300">1 / 10</span>
+        </header>
+
+        <main class="flex-1 px-8 overflow-y-auto pt-2" id="content-area"></main>
+
+        <footer class="safe-footer">
+            <button id="action-button" disabled onclick="handleSubmit()" class="w-full py-4 bg-slate-900 text-white rounded-[18px] font-black text-[14px] shadow-2xl active:scale-95">Prüfen</button>
+        </footer>
+
+        <div id="congrats-modal">
+            <div class="modal-card" id="modal-card">
+                <div class="badge">🏆</div>
+                <h3 class="text-2xl font-black text-slate-900 mb-2">Geschafft!</h3>
+                <p class="text-slate-500 text-sm leading-relaxed mb-8">太棒了！你已经完成了所有医疗阅读练习。刘老师在下一关等着你！</p>
+                <button onclick="window.location.href='main.html'" class="w-full py-4 bg-blue-600 text-white rounded-xl font-black shadow-lg">确定</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const rawData = [
+        { text: "Herr Müller, Frau Dr. Weber ist krank. Ihr Termin am Dienstag ist abgesagt. Sie haben einen neuen Termin am Mittwoch um 10:30 Uhr. Haben Sie keine Zeit? Dann rufen Sie uns bitte heute Abend an.", q1: "Herr Müller hat am Dienstag keinen Termin mehr.", a1: "RICHTIG", q2: "Was ist richtig?", opts: ["Müller muss heute anrufen", "Der neue Termin ist am Mittwoch", "Frau Weber ist am Dienstag da"], ans2: "Der neue Termin ist am Mittwoch", r1: "逻辑：'abgesagt' 表示取消。所以周二的预约无效了。", r2: "事实：文中明确写明周三有新预约。" },
+        { text: "Guten Tag, hier ist die Praxis Dr. Schneider. Ihre Blutwerte sind gut. Alles ist okay. Sie brauchen keine Medikamente. Aber Dr. Schneider möchte kurz mit Ihnen sprechen. Kommen Sie bitte am Freitag um 9:00 Uhr.", q1: "Die Blutwerte vom Patienten sind schlecht.", a1: "FALSCH", q2: "Was soll der Patient machen?", opts: ["Neue Medikamente kaufen", "Am Freitag in die Praxis kommen", "Warten und nichts machen"], ans2: "Am Freitag in die Praxis kommen", r1: "词义：文中说 'gut'，题目说 'schlecht'，所以错误。", r2: "动作：医生需要面谈，对应 'am Freitag kommen'。" },
+        { text: "Wichtig: Nehmen Sie die Tabletten dreimal pro Tag. Essen Sie erst etwas und nehmen Sie dann die Tablette. Trinken Sie viel Wasser dazu. Haben Sie nach drei Tagen noch Schmerzen? Dann kommen Sie bitte wieder.", q1: "Man nimmt die Tabletten beim Essen.", a1: "RICHTIG", q2: "Was ist nach drei Tagen bei Schmerzen?", opts: ["Mehr Wasser trinken", "Noch einmal zum Arzt gehen", "Die Tabletten nicht mehr nehmen"], ans2: "Noch einmal zum Arzt gehen", r1: "常识：先吃饭再吃药，即用餐时段服用。", r2: "对应：'wieder kommen' 即再去看医生。" },
+        { text: "Liebe Patienten, unsere Praxis ist am Freitagnachmittag zu. Wir haben eine Fortbildung. Ist es ein Notfall? Dann rufen Sie die Nummer 116117 an oder gehen Sie direkt in das Krankenhaus.", q1: "Am Freitagvormittag kann man kommen.", a1: "RICHTIG", q2: "Was macht man bei einem Notfall?", opts: ["Bis Montag warten", "Die Notfall-Nummer anrufen", "In die Schule gehen"], ans2: "Die Notfall-Nummer anrufen", r1: "时间：下午（Nachmittag）关门，意味着上午正常。", r2: "信息：紧急号码是 116117。" },
+        { text: "Frau Schmidt, bitte geben Sie dieses Papier bei Ihrer Krankenkasse ab. Die Versicherung muss das Formular unterschreiben. Dann können wir mit der Therapie anfangen. Das dauert circa vier Tage.", q1: "Die Therapie fängt heute sofort an.", a1: "FALSCH", q2: "Was macht Frau Schmidt zuerst?", opts: ["Das Papier zur Versicherung bringen", "Den Arzt unterschreiben", "Vier Tage im Bett bleiben"], ans2: "Das Papier zur Versicherung bringen", r1: "流程：需要先等保险公司签字，无法立即开始。", r2: "动作：'abgeben' 对应把材料带过去。" },
+        { text: "Achtung: Vor der Operation dürfen Sie 12 Stunden nichts essen. Trinken Sie nur Wasser. Kommen Sie morgen früh um 7:00 Uhr zur Rezeption im zweiten Stock.", q1: "Der Patient darf vor der Operation essen.", a1: "FALSCH", q2: "Wo ist die Rezeption?", opts: ["Im ersten Stock", "Im zweiten Stock", "Im Erdgeschoss"], ans2: "Im zweiten Stock", r1: "禁令：'nicht dürfen' 即不允许进食。", r2: "定位：文中明确说是 'zweiter Stock'。" },
+        { text: "Ich möchte ein Rezept abholen. Ich war letzte Woche schon beim Arzt. Er hat gesagt: Das Rezept ist heute fertig. Ich kann es am Empfang abholen. Ich muss nicht warten.", q1: "Der Patient hat heute einen Termin.", a1: "FALSCH", q2: "Was holt die Person ab?", opts: ["Einen neuen Termin", "Ein Rezept", "Medikamente"], ans2: "Ein Rezept", r1: "逻辑：只是拿东西且‘不需等待’，通常没有医生预约。", r2: "单词：核心围绕 'Rezept'。" },
+        { text: "An alle Eltern: Hat Ihr Kind Fieber? Über 38,5 Grad geben Sie bitte den Saft. Das Kind muss viel schlafen. Geht das Fieber nach 24 Stunden nicht weg? Dann rufen Sie uns bitte an.", q1: "Bei 38,4 Grad gibt man den Saft nicht.", a1: "RICHTIG", q2: "Wann soll man anrufen?", opts: ["Sofort bei Fieber", "Nach 24 Stunden mit Fieber", "Wenn das Kind schläft"], ans2: "Nach 24 Stunden mit Fieber", r1: "数值：'über' (超过) 38.5 才给药，38.4 不满足条件。", r2: "条件：观察满 24 小时后决定是否致电。" },
+        { text: "Waschen Sie oft die Hände mit Seife. Das ist gut gegen Grippe. Husten Sie bitte in ein Taschentuch. Sind Sie sehr schwach? Dann bleiben Sie bitte zu Hause und kommen nicht zur Arbeit.", q1: "Händewaschen ist wichtig.", a1: "RICHTIG", q2: "Was macht man, wenn man schwach ist?", opts: ["In die Praxis laufen", "Zu Hause bleiben", "Ein Taschentuch kaufen"], ans2: "Zu Hause bleiben", r1: "逻辑：文中肯定了洗手对防流感的作用。", r2: "原词：直接建议 'zu Hause bleiben'。" },
+        { text: "Ihre Krankenkassenkarte kommt in zwei Wochen mit der Post. Benutzen Sie die alte Karte noch. Die neue Karte muss erst funktionieren. Dann können Sie die alte Karte wegwerfen.", q1: "Die neue Karte ist heute da.", a1: "FALSCH", q2: "Was macht man mit der alten Karte?", opts: ["Heute wegwerfen", "Noch benutzen", "Dem Arzt geben"], ans2: "Noch benutzen", r1: "时间：需要两周时间寄送，并非今天。", r2: "动作：要求 'noch benutzen' (继续使用)。" }
+    ];
+
+    function shuffle(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
+
+    let current = 0, sRF = null, sABC = null, isVerified = false;
+    const dataList = shuffle([...rawData]);
+
+    function renderQuiz(idx) {
+        current = idx; sRF = sABC = null; isVerified = false;
+        const data = dataList[current];
+        const btn = document.getElementById('action-button');
+        btn.disabled = true; btn.innerText = "Prüfen";
+        btn.className = "w-full py-4 bg-slate-900 text-white rounded-[18px] font-black text-[14px] shadow-2xl";
+        document.getElementById('page-info').innerText = `${current + 1} / 10`;
+        const container = document.getElementById('content-area');
+        container.innerHTML = `
+            <div class="mb-4"><div class="reading-box shadow-sm"><p class="text-reading">${data.text}</p></div></div>
+            <div class="space-y-4">
+                <div class="px-1"><p class="text-[14px] font-bold text-slate-800 mb-2">${data.q1}</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div id="rf-RICHTIG" onclick="selectRF('RICHTIG')" class="option-box text-center font-black text-slate-400">RICHTIG</div>
+                        <div id="rf-FALSCH" onclick="selectRF('FALSCH')" class="option-box text-center font-black text-slate-400">FALSCH</div>
+                    </div>
+                </div>
+                <div class="px-1"><p class="text-[14px] font-bold text-slate-800 mb-2">${data.q2}</p>
+                    <div class="space-y-2">${data.opts.map((o, i) => `<div id="abc-${i}" onclick="selectABC('${o}', ${i})" class="option-box font-black text-slate-400">${o}</div>`).join('')}</div>
+                </div>
+                <div id="reason-box" class="reason-area"><span class="reason-title">刘老师错误批改</span><div id="reason-content-list"></div></div>
+            </div>`;
+    }
+
+    function selectRF(v) { if(isVerified) return; sRF = v; document.getElementById('rf-RICHTIG').className = 'option-box text-center font-black '+(v==='RICHTIG'?'selected-blue':'text-slate-400'); document.getElementById('rf-FALSCH').className = 'option-box text-center font-black '+(v==='FALSCH'?'selected-blue':'text-slate-400'); checkBtn(); }
+    function selectABC(v, i) { if(isVerified) return; sABC = v; Array.from(document.querySelectorAll('[id^="abc-"]')).forEach((c, idx) => c.className = 'option-box font-black '+(idx===i?'selected-blue':'text-slate-400')); checkBtn(); }
+    function checkBtn() { if(sRF && sABC) document.getElementById('action-button').disabled = false; }
+
+    function handleSubmit() {
+        if(isVerified) {
+            if(current === 9) showCongrats();
+            else renderQuiz(current + 1);
+            return;
+        }
+        isVerified = true;
+        const data = dataList[current];
+        const btn = document.getElementById('action-button');
+        const q1W = sRF !== data.a1, q2W = sABC !== data.ans2;
+
+        if(data.a1==='RICHTIG') { document.getElementById('rf-RICHTIG').classList.add('correct-box'); if(q1W) document.getElementById('rf-FALSCH').classList.add('wrong-box'); } 
+        else { document.getElementById('rf-FALSCH').classList.add('correct-box'); if(q1W) document.getElementById('rf-RICHTIG').classList.add('wrong-box'); }
+        Array.from(document.querySelectorAll('[id^="abc-"]')).forEach(c => { if(c.innerText===data.ans2) c.classList.add('correct-box'); else if(c.innerText===sABC) c.classList.add('wrong-box'); });
+        
+        btn.innerText = "WEITER";
+        if(!q1W && !q2W) {
+            confetti({ particleCount: 30, spread: 60, origin: { y: 0.8 } });
+            btn.className = "w-full py-4 bg-green-600 text-white rounded-[18px] font-black shadow-lg";
+        } else {
+            const list = document.getElementById('reason-content-list'); list.innerHTML = "";
+            if(q1W) list.innerHTML += `<div class="reason-item"><span class="reason-label">[是非]</span>${data.r1}</div>`;
+            if(q2W) list.innerHTML += `<div class="reason-item"><span class="reason-label">[选择]</span>${data.r2}</div>`;
+            document.getElementById('reason-box').classList.add('show');
+            btn.className = "w-full py-4 bg-blue-600 text-white rounded-[18px] font-black shadow-lg";
+        }
+    }
+
+    function showCongrats() {
+        const modal = document.getElementById('congrats-modal');
+        const card = document.getElementById('modal-card');
+        modal.style.display = 'flex';
+        setTimeout(() => card.classList.add('show'), 10);
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+    }
+
+    renderQuiz(0);
+</script>
+</body>
+</html>
