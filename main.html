@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>刘老师德语课 - 扁平版地图</title>
+    <title>刘老师德语课 - A2 通关地图</title>
     
     <script>
         // 登录权限检查
@@ -14,7 +14,7 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&family=Inter:wght@400;800&display=swap');
         
         body { background-color: #FDFCFB; font-family: 'Noto Sans SC', sans-serif; color: #1E293B; overflow-x: hidden; }
 
@@ -44,7 +44,7 @@
 
         @media (max-width: 480px) { .wm-text { transform: rotate(-25deg) scale(0.7); } }
 
-        /* 卡片基础样式 - 增加扁平化立体感 */
+        /* 卡片基础样式 - 扁平立体感 */
         .a2-card {
             background: #FFFFFF; border: 2px solid #E2E8F0; border-bottom: 6px solid #CBD5E1; 
             border-radius: 20px; transition: all 0.1s ease; cursor: pointer;
@@ -78,7 +78,7 @@
     </div>
 
 <script>
-    // 扁平化高饱和度颜色配置 (增加到15种)
+    // 扁平化高饱和度颜色配置 (已扩充至16种)
     const flatColors = [
         "#4F46E5", // 1 Indigo
         "#10B981", // 2 Emerald
@@ -94,7 +94,8 @@
         "#06B6D4", // 12 Cyan
         "#D946EF", // 13 Fuchsia
         "#A855F7", // 14 Purple
-        "#FB7185"  // 15 Rose (为第15关新增)
+        "#FB7185", // 15 Rose
+        "#0EA5E9"  // 16 Sky Blue (用于购物退货关卡)
     ];
 
     const levels = [
@@ -112,7 +113,8 @@
         { id: 12, title: "实战：职场篇", desc: "BERUFSALLTAG & JOB", file: "12-arbeit" },
         { id: 13, title: "实战：旅行酒店", desc: "REISE & HOTEL", file: "13-reise" },
         { id: 14, title: "实战：网络与媒体", desc: "INTERNET & MEDIEN", file: "14-internet" },
-        { id: 15, title: "实战：住房邻里", desc: "WOHNEN & NACHBARN", file: "15-wohnen" }
+        { id: 15, title: "实战：住房邻里", desc: "WOHNEN & NACHBARN", file: "15-wohnen" },
+        { id: 16, title: "实战：购物与退货", desc: "KAUFEN & REKLAMATION", file: "16-einkauf" }
     ];
 
     const container = document.getElementById('level-list');
@@ -136,6 +138,7 @@
         container.appendChild(card);
     });
 
+    // 这里确保跳转链接添加 .html 后缀
     function go(name) { window.location.href = name + ".html"; }
     document.oncontextmenu = () => false;
 </script>
