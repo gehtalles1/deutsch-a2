@@ -6,7 +6,7 @@
     <title>刘老师德语课 - 扁平版地图</title>
     
     <script>
-        // 登录权限检查保持不动
+        // 登录权限检查
         if (localStorage.getItem('map_access_a2') !== "Servus2026") {
             window.location.href = "index.html";
         }
@@ -42,7 +42,7 @@
             letter-spacing: 4px;
         }
 
-        @media (max-width: 480px) { wm-text { transform: rotate(-25deg) scale(0.7); } }
+        @media (max-width: 480px) { .wm-text { transform: rotate(-25deg) scale(0.7); } }
 
         /* 卡片基础样式 - 增加扁平化立体感 */
         .a2-card {
@@ -78,7 +78,7 @@
     </div>
 
 <script>
-    // 精选地道扁平化高饱和度扁平颜色，每关都不同，确保在白底上清晰
+    // 扁平化高饱和度颜色配置
     const flatColors = [
         "#4F46E5", // 1 Indigo
         "#10B981", // 2 Emerald
@@ -93,13 +93,7 @@
         "#22C55E", // 11 Green
         "#06B6D4", // 12 Cyan
         "#D946EF", // 13 Fuchsia
-        "#A855F7", // 14 Purple
-        "#64748B", // 15 Slate (实战)
-        "#0F172A", // 16 Slate 900 (实战)
-        "#475569", // 17 Slate 600
-        "#1E293B", // 18 Slate 800
-        "#94A3B8", // 19 Slate 400
-        "#E2E8F0"  // 20 Slate 200 (未解锁占位)
+        "#A855F7"  // 14 Purple
     ];
 
     const levels = [
@@ -115,7 +109,8 @@
         { id: 10, title: "不定代词训练营", desc: "INDEFINITPRONOMEN", file: "10-Indefinitpronomen" },
         { id: 11, title: "实战：医疗篇", desc: "MEDIZIN IM ALLTAG", file: "11-arzt" },
         { id: 12, title: "实战：职场篇", desc: "BERUFSALLTAG & JOB", file: "12-arbeit" },
-        { id: 13, title: "实战：旅行酒店", desc: "REISE & HOTEL", file: "13-reise" }
+        { id: 13, title: "实战：旅行酒店", desc: "REISE & HOTEL", file: "13-reise" },
+        { id: 14, title: "实战：网络与媒体", desc: "INTERNET & MEDIEN", file: "14-internet" }
     ];
 
     const container = document.getElementById('level-list');
@@ -124,7 +119,6 @@
         const color = flatColors[index % flatColors.length];
         const card = document.createElement('div');
         card.className = 'a2-card p-5 flex flex-col items-center text-center';
-        // 手动处理扁平化立体边框色
         card.style.borderColor = "#E2E8F0"; 
         card.style.borderBottomColor = "#CBD5E1"; 
         card.onclick = () => go(level.file);
@@ -140,7 +134,6 @@
         container.appendChild(card);
     });
 
-    // 禁用右键逻辑不变
     function go(name) { window.location.href = name + ".html"; }
     document.oncontextmenu = () => false;
 </script>
