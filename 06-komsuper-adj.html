@@ -128,7 +128,7 @@
             { s: ["Welche Tasche ist", "?"], ans: "am schwersten", opts: ["schwer", "schwerer", "am schwersten", "schwerste", "meisten"], t: "哪个包最重？", r: "<b>表语最高级：</b>结尾处用 <b>am ...-sten</b> 结构。" },
             { s: ["Der Weg ist", " als ich dachte."], ans: "länger", opts: ["lang", "länger", "längste", "am längsten", "mehr"], t: "路比我预想的长。", r: "<b>变音：</b>lang -> <b>länger</b>。a 变 ä。" },
             { s: ["Es ist", " geworden."], ans: "kälter", opts: ["kalt", "kälter", "am kältesten", "wärmer", "mehr"], t: "天气变冷了。", r: "<b>语境：</b>暗示比之前冷，用比较级 <b>kälter</b>。" },
-            { s: ["Das ist der", " 向火车站最短的路。"], ans: "kürzeste", opts: ["kurze", "kürzer", "kürzeste", "am kürzesten", "nächste"], t: "这是去火车站最短的路。", r: "<b>发音：</b>kurz 变最高级结尾是 z，加 <b>-este</b>。" },
+            { s: ["Das ist der", " Weg zum Bahnhof."], ans: "kürzeste", opts: ["kurze", "kürzer", "kürzeste", "am kürzesten", "nächste"], t: "这是去火车站最短的路。", r: "<b>发音：</b>kurz 变最高级结尾是 z，加 <b>-este</b>。" },
             { s: ["Sie ist meine", " Schwester."], ans: "jüngste", opts: ["jung", "jünger", "jüngste", "am jüngsten", "älteste"], t: "她是我的小妹妹。", r: "<b>变音：</b>jung -> <b>jüng-</b>。定语最高级加 -ste。" },
             { s: ["Dieser Film ist", "."], ans: "interessanter", opts: ["interessant", "interessanter", "am interessantesten", "mehr", "spannender"], t: "这部电影更有趣。", r: "<b>长词：</b>多音节词比较级直接加 <b>-er</b>。" },
             { s: ["Maria arbeitet", " als Peter."], ans: "fleißiger", opts: ["fleißig", "fleißiger", "am fleißigsten", "fleißigste", "mehr"], t: "玛利亚工作比彼得勤奋。", r: "<b>对比：</b>看到 als，肯定用比较级 <b>fleißiger</b>。" },
@@ -205,7 +205,7 @@
                     cur++;
                     if (cur < gameList.length) renderLevel();
                     else document.getElementById('winModal').style.display = 'flex';
-                }, 1500); // 答对后等待1.5秒，平衡流畅感和成就感
+                }, 1500);
             } else {
                 const fb = document.getElementById('errorFeedback');
                 fb.innerHTML = `
