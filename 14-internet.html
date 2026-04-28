@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>刘老师德语课 - 手机网络专项</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+SC:wght@400;700;900&display=swap');
+        
+        html, body { min-height: 100%; background: #F5F3FF; font-family: 'Inter', 'Noto Sans SC', sans-serif; margin: 0; padding: 0; }
+        .app-container { background: #FFFFFF; width: 100%; max-width: 430px; min-height: 100vh; display: flex; flex-direction: column; margin: 0 auto; position: relative; }
+        .reading-box { background: linear-gradient(135deg, #DDD6FE 0%, #C4B5FD 100%); border-radius: 18px; padding: 15px 20px; border: 3px solid #7C3AED; margin-bottom: 15px; }
+        .text-reading { font-size: 14px; line-height: 1.5; color: #4C1D95; font-weight: 700; }
+        .option-box { transition: all 0.2s; border: 2px solid #E2E8F0; cursor: pointer; border-radius: 14px; background: #FFF; font-size: 13px; padding: 10px 16px !important; color: #334155; font-weight: 700; margin-bottom: 8px; }
+        .selected-blue { border-color: #7C3AED !important; background: #F5F3FF !important; color: #5B21B6 !important; border-width: 3px !important; }
+        .correct-box { border-color: #059669 !important; background: #ECFDF5 !important; color: #064E3B !important; border-width: 3px !important; }
+        .wrong-box { border-color: #E11D48 !important; background: #FFF1F2 !important; color: #881337 !important; border-width: 3px !important; }
+        .reason-area { border-radius: 12px; padding: 12px; margin-top: 15px; margin-bottom: 100px; background: #F5F3FF; border-left: 5px solid #7C3AED; display: none; }
+        .reason-title { font-weight: 900; color: #5B21B6; font-size: 12px; margin-bottom: 4px; }
+        .reason-item { font-size: 12px; color: #4C1D95; line-height: 1.6; margin-bottom: 10px; }
+        .safe-footer { position: sticky; bottom: 0; padding: 15px 24px calc(15px + env(safe-area-inset-bottom)); background: linear-gradient(to top, white 80%, rgba(255,255,255,0)); border-top: 1px solid #F1F5F9; z-index: 50; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="px-7 pt-6 pb-2 flex justify-between items-center">
+            <button onclick="location.href='main.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-purple-50 border-2 border-purple-100 shadow-sm active:scale-90 transition-transform">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7C3AED" stroke-width="3"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <span id="page-info" class="text-[13px] font-black text-purple-400 tracking-tighter">1 / 20</span>
+        </header>
+        <main class="flex-1 px-7 py-4" id="content-area"></main>
+        <footer class="safe-footer">
+            <button id="action-button" disabled onclick="handleSubmit()" class="w-full py-4 bg-purple-900 text-white rounded-[22px] font-black text-[15px] shadow-2xl active:scale-95 transition-all opacity-50">Prüfen</button>
+        </footer>
+    </div>
+
+<script>
+    const quizData = [
+        { text: "📱 Handyvertrag: Bei uns bekommen Sie 10 GB Internet für nur 15 Euro im Monat. Sie können den Vertrag jeden Monat kündigen. Wenn Sie mehr Daten brauchen, kostet das extra.", q1: "Der Vertrag läuft immer zwei Jahre.", a1: "FALSCH", q2: "Was passiert, wenn man mehr als 10 GB Internet nutzt?", opts: ["Das Internet ist weg", "Man muss mehr bezahlen", "Man bekommt 15 Euro zurück"], ans2: "Man muss mehr bezahlen", r1: "原文提到可以每月解约。<br><b>【背词】kündigen 解约；Vertrag 合同</b>", r2: "原文说多用流量要额外付钱。<br><b>【背词】mehr 更多；extra 另外的</b>" },
+        { text: "📶 WLAN im Hotel: Unser Internet ist für alle Gäste im Zimmer und im Restaurant kostenlos. Das Passwort bekommen Sie an der Rezeption. Für die Arbeit gibt es ein schnelles Business-WLAN.", q1: "Man kann das Internet nur im Zimmer nutzen.", a1: "FALSCH", q2: "Wo findet man das Passwort für das WLAN?", opts: ["In der Speisekarte", "An der Rezeption", "Auf dem Tisch im Zimmer"], ans2: "An der Rezeption", r1: "原文说房间和餐厅都可用。<br><b>【背词】Zimmer 房间；Restaurant 餐厅</b>", r2: "原文说在柜台领取密码。<br><b>【背词】Passwort 密码；Rezeption 前台</b>" },
+        { text: "📩 Neue E-Mail: Achtung, Ihr Passwort ist nicht sicher! Bitte ändern Sie es sofort in Ihrem Konto. Benutzen Sie keine einfachen Wörter oder Ihr Geburtsdatum als Passwort.", q1: "Das alte Passwort ist sehr gut.", a1: "FALSCH", q2: "Welches Passwort ist laut Text schlecht?", opts: ["Ein langes Wort", "Das Geburtsdatum", "Eine neue E-Mail-Adresse"], ans2: "Das Geburtsdatum", r1: "原文警示密码不安全。<br><b>【背词】sicher 安全；nicht 不</b>", r2: "原文禁止使用出生日期。<br><b>【背词】Geburtsdatum 出生日期；benutzen 使用</b>" },
+        { text: "📸 Fotos teilen: Ich schicke dir die Fotos von der Party per WhatsApp. Bitte stell sie nicht auf Instagram oder Facebook, weil nicht alle Leute auf den Fotos das möchten.", q1: "Alle Leute auf der Party wollen auf Instagram sein.", a1: "FALSCH", q2: "Wie bekommt die Person die Fotos?", opts: ["Über Instagram", "Per WhatsApp", "Mit der Post"], ans2: "Per WhatsApp", r1: "原文说并非所有人都愿意。<br><b>【背词】Leute 人们；möchten 想要</b>", r2: "原文说通过 WhatsApp 发送。<br><b>【背词】schicken 发送；Foto 照片</b>" },
+        { text: "💻 Computer-Kurs: Möchten Sie lernen, wie man E-Mails schreibt und im Internet surft? Unser Kurs für Anfänger beginnt am Montag um 18:00 Uhr im Computerraum 2.", q1: "Der Kurs ist für Leute, die schon alles können.", a1: "FALSCH", q2: "Wann fängt der Kurs an?", opts: ["Am Montagabend", "Am Montagmorgen", "Nächste Woche"], ans2: "Am Montagabend", r1: "原文提到是为初学者开设的。<br><b>【背词】Anfänger 初学者；Kurs 课程</b>", r2: "原文时间是 18:00。<br><b>【背词】beginnen 开始；Montag 周一</b>" },
+        { text: "📞 Kundenservice: Haben Sie Probleme mit Ihrem Router? Rufen Sie uns an! Wir sind von Montag bis Freitag von 9:00 bis 17:00 Uhr für Sie da. Am Wochenende ist unser Büro zu.", q1: "Man kann am Sonntag den Kundenservice anrufen.", a1: "FALSCH", q2: "Wann kann man Hilfe bekommen?", opts: ["Jeden Tag", "Mittwoch um 14:00 Uhr", "Samstagmorgen"], ans2: "Mittwoch um 14:00 Uhr", r1: "原文说周末办公室关闭。<br><b>【背词】Büro 办公室；zu 关闭</b>", r2: "原文办公时间包含周三。<br><b>【背词】Freitag 周五；anrufen 打电话</b>" },
+        { text: "🛒 Online kaufen: Bestellen Sie Ihr neues Handy online! Die Lieferung dauert nur 2 Tage. Wenn das Handy kaputt ist, können Sie es kostenlos zurückschicken.", q1: "Man muss für die Rücksendung bezahlen, wenn das Handy kaputt ist.", a1: "FALSCH", q2: "Wie lange muss man auf das Handy warten?", opts: ["Einen Monat", "Zwei Tage", "Eine Woche"], ans2: "Zwei Tage", r1: "原文说可以免费寄回。<br><b>【背词】kostenlos 免费；zurückschicken 寄回</b>", r2: "原文说只需 2 天。<br><b>【背词】Lieferung 物流；dauern 持续</b>" },
+        { text: "🔋 Akku leer: Mein Handy-Akku ist fast leer. Hast du ein Ladegerät für mich? Ich muss dringend meine Mutter anrufen, aber mein Handy geht gleich aus.", q1: "Die Person hat noch viel Energie im Handy.", a1: "FALSCH", q2: "Was braucht die Person?", opts: ["Ein neues Handy", "Ein Ladegerät", "Die Telefonnummer"], ans2: "Ein Ladegerät", r1: "原文说电池几乎空了。<br><b>【背词】leer 空的；fast 几乎</b>", r2: "原文在找充电器。<br><b>【背词】Ladegerät 充电器；brauchen 需要</b>" },
+        { text: "💬 Neue Nachricht: Hallo Ben, ich bin gerade im Zug. Das Internet hier ist sehr schlecht. Ich schreibe dir später eine SMS, wenn ich zu Hause bin.", q1: "Das Internet im Zug ist super.", a1: "FALSCH", q2: "Wann schreibt die Person eine SMS?", opts: ["Sofort", "Wenn sie zu Hause ist", "Morgen"], ans2: "Wenn sie zu Hause ist", r1: "原文评价网络很差。<br><b>【背词】schlecht 差的；Internet 网络</b>", r2: "原文说等到了家再写。<br><b>【背词】schreiben 写；zu Hause 在家</b>" },
+        { text: "📺 Streaming: Bei 'Movie-Night' können Sie für 9 Euro im Monat so viele Filme sehen, wie Sie wollen. Sie können das Abo jeden Monat beenden.", q1: "Man darf nur einen Film pro Monat sehen.", a1: "FALSCH", q2: "Wie viel kostet der Service im Monat?", opts: ["9 Euro", "19 Euro", "Es ist kostenlos"], ans2: "9 Euro", r1: "原文说想看多少就看多少。<br><b>【背词】viele 许多；Film 电影</b>", r2: "原文价格是 9 欧。<br><b>【背词】Monat 月；kosten 花费</b>" },
+        { text: "🕹️ App-Store: Diese Spiele-App ist kostenlos. Aber einige Dinge in der App kosten Geld, zum Beispiel neue Kleidung für Ihre Spielfigur.", q1: "In dieser App ist alles kostenlos.", a1: "FALSCH", q2: "Was kostet in der App Geld?", opts: ["Die App selbst", "Extras wie Kleidung", "Das Herunterladen"], ans2: "Extras wie Kleidung", r1: "原文说有些东西要钱。<br><b>【背词】einige 一些；Geld 钱</b>", r2: "原文举例衣服收费。<br><b>【背词】Kleidung 衣服；Beispiel 例子</b>" },
+        { text: "🔒 Tablet sperren: Bitte wählen Sie einen Code für Ihr Tablet. So können andere Personen Ihre privaten Nachrichten und Fotos nicht lesen.", q1: "Ohne Code kann jeder die Fotos sehen.", a1: "RICHTIG", q2: "Warum braucht man einen Code?", opts: ["Damit das Tablet schöner ist", "Für die Sicherheit", "Um schneller zu schreiben"], ans2: "Für die Sicherheit", r1: "原文说设码是为了不让别人看。<br><b>【背词】lesen 读；Personen 人们</b>", r2: "逻辑对应安全目的。<br><b>【背词】privat 私人的；Nachricht 消息</b>" },
+        { text: "🎧 Bluetooth: Sie können Ihre Kopfhörer ohne Kabel mit dem Handy verbinden. Schalten Sie Bluetooth an und suchen Sie nach 'Kopfhörer-123'.", q1: "Man braucht ein Kabel für die Kopfhörer.", a1: "FALSCH", q2: "Wie findet man die Kopfhörer im Handy?", opts: ["Man sucht nach einem Namen", "Man ruft die Kopfhörer an", "Man braucht eine E-Mail"], ans2: "Man sucht nach einem Namen", r1: "原文说不需要电缆。<br><b>【背词】Kabel 线；ohne 没有</b>", r2: "原文说搜索特定名称。<br><b>【背词】suchen 搜索；Name 名字</b>" },
+        { text: "📻 Radio-App: Hören Sie Ihre Lieblingsmusik jetzt auch mit unserer App. Sie können die Musik speichern und dann auch ohne Internet hören.", q1: "Man braucht immer Internet für die Musik.", a1: "FALSCH", q2: "Was kann man mit der Musik in der App machen?", opts: ["Löschen", "Speichern", "Verkaufen"], ans2: "Speichern", r1: "原文说没网也能听。<br><b>【背词】hören 听；Internet 网络</b>", r2: "原文说可以保存音乐。<br><b>【背词】speichern 保存；Musik 音乐</b>" },
+        { text: "📢 Social Media Tipp: Schreib nicht zu viele Informationen über dich im Internet. Jeder kann deine Adresse oder Telefonnummer sehen, wenn du nicht aufpasst.", q1: "Jeder im Internet kann die Informationen sehen.", a1: "RICHTIG", q2: "Was soll man laut Text nicht machen?", opts: ["Zu viel über sich schreiben", "Musik hören", "Fotos machen"], ans2: "Zu viel über sich schreiben", r1: "原文警告如果不注意谁都能看。<br><b>【背词】jeder 每个；sehen 看见</b>", r2: "原文建议不要写太多。<br><b>【背词】Informationen 信息；schreiben 写</b>" },
+        { text: "📑 Datei senden: Ich kann die Datei nicht öffnen. Kannst du sie mir bitte noch einmal als PDF schicken? Mein Computer kennt das andere Format nicht.", q1: "Der Computer kann die Datei jetzt lesen.", a1: "FALSCH", q2: "Welches Format möchte die Person haben?", opts: ["Ein Foto", "Eine PDF-Datei", "Eine E-Mail"], ans2: "Eine PDF-Datei", r1: "原文说打不开文件。<br><b>【背词】Datei 文件；öffnen 打开</b>", r2: "原文要求 PDF 格式。<br><b>【背词】Computer 电脑；Format 格式</b>" },
+        { text: "🗺️ Navigation: Die App zeigt dir den Weg. Du musst nur die Adresse eingeben. Achtung: Die App braucht viel Energie. Dein Akku wird schnell leer.", q1: "Die App ist sehr gut für den Handy-Akku.", a1: "FALSCH", q2: "Was muss man in der App machen?", opts: ["Ein Foto machen", "Die Adresse eingeben", "Musik hören"], ans2: "Die Adresse eingeben", r1: "原文说电池会很快没电。<br><b>【背词】Akku 电池；schnell 快</b>", r2: "原文说输入地址。<br><b>【背词】Adresse 地址；eingeben 输入</b>" },
+        { text: "🤳 Selfie-Verbot: In diesem Museum ist Fotografieren erlaubt, aber bitte benutzen Sie keinen Selfie-Stick. Das ist gefährlich für die Bilder an der Wand.", q1: "Man darf im Museum gar keine Fotos machen.", a1: "FALSCH", q2: "Warum ist der Selfie-Stick verboten?", opts: ["Er ist zu teuer", "Er ist gefährlich für die Bilder", "Er ist zu schwer"], ans2: "Er ist gefährlich für die Bilder", r1: "原文说拍照是允许的。<br><b>【背词】erlaubt 允许；Museum 博物馆</b>", r2: "原文说对画有危险。<br><b>【背词】gefährlich 危险；Bild 画</b>" },
+        { text: "🖥️ Bildschirmzeit: Ich arbeite zu viel am Computer. Meine Augen tun weh. Ich mache jetzt eine Pause und gehe eine Stunde spazieren.", q1: "Die Person hat Schmerzen in den Augen.", a1: "RICHTIG", q2: "Was macht die Person jetzt?", opts: ["Weiterarbeiten", "Einen Film sehen", "Spazieren gehen"], ans2: "Spazieren gehen", r1: "原文说眼睛疼。<br><b>【背词】Auge 眼睛；weh tun 疼</b>", r2: "原文说要去散步。<br><b>【背词】Pause 休息；spazieren gehen 散步</b>" },
+        { text: "⌨️ Tastatur: Meine Tastatur ist kaputt. Einige Buchstaben funktionieren nicht mehr. Ich kann keine E-Mails mehr schreiben.", q1: "Die Tastatur funktioniert perfekt.", a1: "FALSCH", q2: "Warum kann die Person keine E-Mails schreiben?", opts: ["Kein Internet", "Tastatur kaputt", "Keine Zeit"], ans2: "Tastatur kaputt", r1: "原文说键盘坏了。<br><b>【背词】kaputt 坏；Tastatur 键盘</b>", r2: "原文说字母没法用了。<br><b>【背词】funktionieren 运作；Buchstabe 字母</b>" }
+    ];
+
+    let current = 0, sRF = null, sABC = null, isVerified = false;
+    const dataList = [...quizData].sort(() => Math.random() - 0.5);
+
+    function renderQuiz(idx) {
+        current = idx; sRF = sABC = null; isVerified = false;
+        const data = dataList[current];
+        const btn = document.getElementById('action-button');
+        btn.disabled = true; btn.innerText = "Prüfen";
+        btn.className = "w-full py-4 bg-purple-900 text-white rounded-[22px] font-black text-[15px] shadow-2xl opacity-50";
+        document.getElementById('page-info').innerText = `${current + 1} / ${dataList.length}`;
+        document.getElementById('content-area').innerHTML = `
+            <div class="reading-box"><p class="text-reading">${data.text}</p></div>
+            <div class="w-full">
+                <p class="text-[14px] font-black text-slate-800 mb-3">${data.q1}</p>
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div id="rf-RICHTIG" onclick="selectRF('RICHTIG')" class="option-box text-center">RICHTIG</div>
+                    <div id="rf-FALSCH" onclick="selectRF('FALSCH')" class="option-box text-center">FALSCH</div>
+                </div>
+                <p class="text-[14px] font-black text-slate-800 mb-3">${data.q2}</p>
+                <div class="space-y-1">${data.opts.map((o, i) => `<div id="abc-${i}" onclick="selectABC('${o}', ${i})" class="option-box">${o}</div>`).join('')}</div>
+            </div>
+            <div id="reason-box" class="reason-area"><span class="reason-title">刘老师专业解析 & 词汇积累</span><div id="reason-content" class="space-y-1"></div></div>`;
+        window.scrollTo(0, 0);
+    }
+
+    function selectRF(v) { if(isVerified) return; sRF = v; document.getElementById('rf-RICHTIG').className = 'option-box text-center '+(v==='RICHTIG'?'selected-blue':'text-slate-400'); document.getElementById('rf-FALSCH').className = 'option-box text-center '+(v==='FALSCH'?'selected-blue':'text-slate-400'); checkBtn(); }
+    function selectABC(v, i) { if(isVerified) return; sABC = v; Array.from(document.querySelectorAll('[id^="abc-"]')).forEach((c, idx) => c.className = 'option-box '+(idx===i?'selected-blue':'text-slate-400')); checkBtn(); }
+    function checkBtn() { if(sRF && sABC) { const btn = document.getElementById('action-button'); btn.disabled = false; btn.classList.remove('opacity-50'); } }
+
+    function handleSubmit() {
+        const btn = document.getElementById('action-button');
+        if(isVerified) {
+            if(current === dataList.length - 1) { alert("Herzlichen Glückwunsch! 完成本关！"); location.href = 'main.html'; return; }
+            renderQuiz(current + 1); return;
+        }
+        isVerified = true;
+        const data = dataList[current];
+        const q1Correct = sRF === data.a1, q2Correct = sABC === data.ans2;
+        if(data.a1==='RICHTIG') document.getElementById('rf-RICHTIG').classList.add('correct-box');
+        else document.getElementById('rf-FALSCH').classList.add('correct-box');
+        Array.from(document.querySelectorAll('[id^="abc-"]')).forEach(c => {
+            if(c.innerText === data.ans2) c.classList.add('correct-box');
+            else if(c.innerText === sABC) c.classList.add('wrong-box');
+        });
+
+        // 核心逻辑：只有全对才不显示解析框
+        if (q1Correct && q2Correct) {
+            confetti({ particleCount: 40, spread: 70, origin: { y: 0.8 }, colors: ['#7C3AED', '#DDD6FE'] });
+            btn.className = "w-full py-4 bg-emerald-600 text-white rounded-[22px] font-black text-[15px] shadow-2xl";
+        } else {
+            let innerHtml = "";
+            if(!q1Correct) innerHtml += `<div class="reason-item">🚩 <b>Q1:</b> ${data.r1}</div>`;
+            if(!q2Correct) innerHtml += `<div class="reason-item">🚩 <b>Q2:</b> ${data.r2}</div>`;
+            document.getElementById('reason-content').innerHTML = innerHtml;
+            document.getElementById('reason-box').style.display = 'block';
+            setTimeout(() => { window.scrollBy({ top: 150, behavior: 'smooth' }); }, 100);
+            btn.className = "w-full py-4 bg-purple-600 text-white rounded-[22px] font-black text-[15px] shadow-2xl";
+        }
+        btn.innerText = "Nächste Frage";
+    }
+    renderQuiz(0);
+</script>
+</body>
+</html>
