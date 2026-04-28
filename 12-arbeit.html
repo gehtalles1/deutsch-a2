@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>Lius A2 - Arbeit & Beruf</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+SC:wght@400;700;900&display=swap');
+        body { background: #F8FAFC; font-family: 'Inter', 'Noto Sans SC', sans-serif; display: flex; justify-content: center; }
+        .app-container { background: #FFFFFF; width: 100%; max-width: 430px; min-height: 100vh; display: flex; flex-direction: column; box-shadow: 0 0 50px rgba(0,0,0,0.05); position: relative; }
+        .reading-box { background: linear-gradient(135deg, #EEF2FF 0%, #E0E7FF 100%); border-radius: 16px; padding: 18px; border: 1px solid #C7D2FE; margin-top: 8px; }
+        .text-reading { font-size: 14px; line-height: 1.6; color: #1E1B4B; font-weight: 500; }
+        .option-box { transition: all 0.2s; border: 1.5px solid #E2E8F0; cursor: pointer; border-radius: 10px; background: #FFF; font-size: 13px; padding: 12px !important; color: #1E293B; }
+        .selected-blue { border-color: #4F46E5 !important; background: #F5F3FF !important; color: #4338CA !important; }
+        .correct-box { border-color: #10B981 !important; background: #ECFDF5 !important; color: #065F46 !important; }
+        .wrong-box { border-color: #F43F5E !important; background: #FFF1F2 !important; color: #9F1239 !important; }
+        .reason-area { max-height: 0; opacity: 0; overflow: hidden; transition: all 0.4s ease; background: #F8FAFC; border-radius: 10px; }
+        .reason-area.show { max-height: 400px; opacity: 1; margin-top: 12px; padding: 12px; border-left: 4px solid #6366F1; }
+        .reason-title { font-weight: 900; color: #4338CA; font-size: 11px; margin-bottom: 6px; display: block; letter-spacing: 1px; }
+        .reason-item { font-size: 12px; color: #475569; line-height: 1.6; margin-bottom: 8px; }
+        .reason-label { font-weight: 800; color: #1E293B; margin-right: 4px; }
+        .safe-footer { padding: 1.2rem 2rem 2.5rem 2rem; }
+        #congrats-modal { display: none; position: absolute; inset: 0; background: rgba(30, 27, 75, 0.85); z-index: 100; align-items: center; justify-content: center; padding: 2rem; }
+        .modal-card { background: white; border-radius: 24px; padding: 2.5rem 2rem; text-align: center; width: 100%; transform: scale(0.9); opacity: 0; transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); }
+        .modal-card.show { transform: scale(1); opacity: 1; }
+        .badge { width: 80px; height: 80px; background: #E0E7FF; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 0 auto 1.5rem; font-size: 40px; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="px-8 pt-6 pb-2 flex justify-between items-center">
+            <button onclick="window.location.href='main.html'" class="w-8 h-8 flex items-center justify-center rounded-lg bg-slate-50 border border-slate-100">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="2.5"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <span id="page-info" class="text-[12px] font-black text-indigo-300">1 / 20</span>
+        </header>
+
+        <main class="flex-1 px-8 overflow-y-auto pt-2" id="content-area"></main>
+
+        <footer class="safe-footer">
+            <button id="action-button" disabled onclick="handleSubmit()" class="w-full py-4 bg-indigo-950 text-white rounded-[18px] font-black text-[14px] shadow-2xl active:scale-95">Prüfen</button>
+        </footer>
+
+        <div id="congrats-modal">
+            <div class="modal-card" id="modal-card">
+                <div class="badge">👨‍🏫</div>
+                <h3 class="text-2xl font-black text-slate-900 mb-2">Logik-Meister!</h3>
+                <p class="text-slate-500 text-sm leading-relaxed mb-8">刘老师的职场逻辑挑战完成！你已经掌握了德语职场的核心表达。太棒了！</p>
+                <button onclick="window.location.href='main.html'" class="w-full py-4 bg-indigo-600 text-white rounded-xl font-black shadow-lg">确定</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    const rawData = [
+        { text: "Stellenanzeige: Wir suchen eine Sekretärin. Sie organisieren Termine für die Anwälte. Arbeitszeit: Montag bis Freitag, 20 Stunden pro Woche.", q1: "Die Stelle ist eine Vollzeitstelle.", a1: "FALSCH", q2: "Was ist eine Aufgabe in diesem Job?", opts: ["Gesetze schreiben", "Termine organisieren", "Anwälte ausbilden"], ans2: "Termine organisieren", r1: "逻辑：每周20小时属于Teilzeit（兼职），不是Vollzeit。", r2: "职责：文中明确写明 'organisieren Termine'。" },
+        { text: "Sehr geehrter Herr Brand, wir möchten Sie kennenlernen. Haben Sie nächsten Dienstag Zeit für ein Gespräch? Bitte bringen Sie Ihre Zeugnisse im Original mit.", q1: "Herr Brand hat den Job schon bekommen.", a1: "FALSCH", q2: "Was soll Herr Brand zum Termin mitbringen?", opts: ["Den Arbeitsvertrag", "Seine Zeugnisse", "Einen neuen Laptop"], ans2: "Seine Zeugnisse", r1: "阶段：面试（Gespräch）只是互相了解，合同通常在之后签署。", r2: "细节：文中明确提到 'Zeugnisse' (证书)。" },
+        { text: "Liebe Kollegen, die Kaffeemaschine ist kaputt. Der Techniker kommt erst am Montag. Bitte gehen Sie in der Pause in die Cafeteria im Erdgeschoss.", q1: "Die Maschine wird erst nächste Woche repariert.", a1: "RICHTIG", q2: "Wo sollen die Mitarbeiter die Pause machen?", opts: ["In der Küche", "In der Cafeteria", "Im Keller"], ans2: "In der Cafeteria", r1: "时间：如果是周五发的通知，周一修确实是下周。", r2: "指令：'Gehen Sie in die Cafeteria' 是唯一明确的目的地。" },
+        { text: "Anzeige: Möchten Sie Ihre Karriere ändern? Sie arbeiten momentan nicht im Büro, suchen aber einen IT-Job? Unsere Umschulung dauert nur 6 Monate. Rufen Sie uns an!", q1: "Dieses Angebot ist für IT-Experten gedacht.", a1: "FALSCH", q2: "Für wen ist dieser Kurs?", opts: ["Für Personen, die im Büro arbeiten möchten", "Für Leute, die schon IT-Chefs sind", "Für Studenten an der Universität"], ans2: "Für Personen, die im Büro arbeiten möchten", r1: "身份：'Umschulung' 是转岗培训，目标是还没在这一行工作的人。", r2: "目标：文中问是否想从事 'IT-Job/im Büro arbeiten'。" },
+        { text: "Achtung: Die Besprechung findet nicht in Raum 102 statt. Da gibt es ein Problem mit dem Licht. Gehen Sie bitte in Raum 405 im vierten Stock.", q1: "Das Treffen ist im vierten Stock.", a1: "RICHTIG", q2: "Warum ist das Treffen nicht in Raum 102?", opts: ["Es ist zu klein", "Dort gibt es ein Problem", "Der Chef ist nicht da"], ans2: "Dort gibt es ein Problem", r1: "位置：405房在四楼（vierter Stock）。", r2: "因果：文中明确提到 'Da gibt es ein Problem'。" },
+        { text: "Ich bin Krankenschwester. Ich arbeite im Schichtdienst: mal früh, mal spät und nachts. Ich helfe Menschen gern. Ich habe meistens am Montag und Dienstag frei.", q1: "Die Person arbeitet jeden Tag zur gleichen Zeit.", a1: "FALSCH", q2: "Wann arbeitet die Person NICHT?", opts: ["Am Wochenende", "Am Montag und Dienstag", "In der Nacht"], ans2: "Am Montag und Dienstag", r1: "模式：'Schichtdienst' (轮班制) 意味着时间经常变动。", r2: "反向：'frei haben' 等同于题目中的 'NICHT arbeiten'。" },
+        { text: "Notiz: Herr Müller hat angerufen. Er kann heute nicht kommen. Er ist im Stau. Er kommt morgen um 9:00 Uhr. Bitte informieren Sie den Chef.", q1: "Herr Müller kommt heute etwas später.", a1: "FALSCH", q2: "Wann findet der Termin mit Herrn Müller jetzt statt?", opts: ["Heute Nachmittag", "In einer Stunde", "Am nächsten Tag"], ans2: "Am nächsten Tag", r1: "变动：他今天不来了，改到了明天（morgen）。", r2: "时间转换：'morgen' 即 'am nächsten Tag'。" },
+        { text: "Lebenslauf: Ich habe drei Jahre als Automechaniker gearbeitet. Jetzt suche ich eine neue Herausforderung in einer Werkstatt. Ich möchte nicht mehr als Verkäufer arbeiten.", q1: "Die Person hat Erfahrung in der Autoreparatur.", a1: "RICHTIG", q2: "Welche Arbeit sucht die Person?", opts: ["Einen Job im Autohaus (Verkauf)", "Einen Job in einer Werkstatt", "Einen Job als Lehrer"], ans2: "Einen Job in einer Werkstatt", r1: "职能：'Automechaniker' 的核心工作就是修理。", r2: "意愿：文中明确排除 'Verkäufer'，选择 'Werkstatt'。" },
+        { text: "Wichtig: Bitte schalten Sie am Abend die Computer aus. Das Licht geht um 20:00 Uhr automatisch aus. Wer länger arbeitet, muss das Licht selbst wieder anmachen.", q1: "Man muss das Licht um 20:00 Uhr manuell ausmachen.", a1: "FALSCH", q2: "Was sollen die Mitarbeiter vor dem Gehen machen?", opts: ["Das Licht anmachen", "Die Computer ausschalten", "Die Fenster putzen"], ans2: "Die Computer ausschalten", r1: "细节：灯是自动（automatisch）熄灭的，不是人工。", r2: "指令：第一句话就是要求关掉电脑。" },
+        { text: "Frau Berger ist unsere neue Chefin. Sie kommt morgen aus Berlin. Sie möchte mit jedem Mitarbeiter kurz sprechen. Tragen Sie Ihren Namen in die Liste an der Tür ein.", q1: "Frau Berger kennt das Team noch nicht.", a1: "RICHTIG", q2: "Wie können die Mitarbeiter einen Termin bekommen?", opts: ["Sie müssen nach Berlin fahren", "Sie schreiben ihren Namen in eine Liste", "Sie müssen Frau Berger anrufen"], ans2: "Sie schreiben ihren Namen in eine Liste", r1: "推断：'新上任' 且 '要跟每个人谈话' 说明还不认识大家。", r2: "动作：'Eintragen' 对应选项中的 'schreiben'。" },
+        { text: "Firmen-Info: Unsere Mitarbeiter können das Fitnessstudio im Haus kostenlos nutzen. Es ist von 6:00 bis 22:00 Uhr geöffnet. Bitte bringen Sie eigene Sportschuhe mit.", q1: "Mitarbeiter müssen für das Studio bezahlen.", a1: "FALSCH", q2: "Was ist eine Regel für das Studio?", opts: ["Man braucht Sportschuhe", "Man darf nur am Morgen kommen", "Es kostet 10 Euro pro Monat"], ans2: "Man braucht Sportschuhe", r1: "费用：'kostenlos' (免费) 与 'bezahlen' (付钱) 矛盾。", r2: "规则：明确提到 'bringen Sie eigene Sportschuhe mit'。" },
+        { text: "An alle Teamleiter: Bitte schicken Sie den Urlaubsplan für den Sommer bis Freitag an die Personalabteilung. Spätere Pläne können wir nicht akzeptieren.", q1: "Der Urlaubsplan muss am Freitagabend fertig sein.", a1: "RICHTIG", q2: "Wer bekommt die Pläne?", opts: ["Die Kunden", "Die Personalabteilung", "Die neuen Mitarbeiter"], ans2: "Die Personalabteilung", r1: "时限：'bis Freitag' 指周五就是最后期限。", r2: "接收方：文中明确指向 'Personalabteilung' (人事处)。" },
+        { text: "Anzeige: Wir suchen Aushilfen für unser Café am Wochenende. Erfahrung ist nicht wichtig, aber Sie müssen freundlich sein. Bezahlung: 13 Euro pro Stunde.", q1: "Man braucht viel Erfahrung für diesen Job.", a1: "FALSCH", q2: "Wann soll man arbeiten?", opts: ["Von Montag bis Freitag", "Am Samstag und Sonntag", "Jeden Abend"], ans2: "Am Samstag und Sonntag", r1: "要求：文中直说 'Erfahrung ist nicht wichtig' (经验不重要)。", r2: "时间转换：'am Wochenende' (周末) 即周六和周日。" },
+        { text: "Besuch vom Chef: Herr Richter kommt heute um 11:00 Uhr. Wir müssen den Besprechungsraum aufräumen. Bitte bringen Sie auch Gläser und Wasser in den Raum.", q1: "Der Besprechungsraum ist momentan nicht ordentlich.", a1: "RICHTIG", q2: "Was soll vorbereitet werden?", opts: ["Essen und Kaffee", "Gläser und Wasser", "Ein Geschenk"], ans2: "Gläser und Wasser", r1: "逻辑：需要 'aufräumen' (整理) 说明目前不整齐。", r2: "细节：明确要求准备水和杯子。" },
+        { text: "Interne Mitteilung: Ab nächster Woche fangen wir um 8:30 Uhr an. Die Mittagspause dauert jetzt eine Stunde statt 30 Minuten. Die Arbeitszeit endet um 17:30 Uhr.", q1: "Die Mittagspause war früher kürzer.", a1: "RICHTIG", q2: "Wie lange arbeiten die Mitarbeiter pro Tag (ohne Pause)?", opts: ["8 Stunden", "9 Stunden", "7 Stunden"], ans2: "8 Stunden", r1: "对比：以前 30 分钟，现在 1 小时，以前确实更短。", r2: "计算：8:30 到 17:30 共 9 小时，减去 1 小时休息，纯工时为 8 小时。" },
+        { text: "Liebe Kollegen, ich fahre morgen auf Dienstreise nach München. Bei dringenden Problemen rufen Sie bitte Frau Bauer an. Ich bin am Donnerstag wieder da. Gruß, Peter.", q1: "Peter arbeitet morgen in München.", a1: "RICHTIG", q2: "An wen kann man sich morgen bei Problemen wenden?", opts: ["An Peter", "An Frau Bauer", "An niemanden"], ans2: "An Frau Bauer", r1: "地点：'Dienstreise nach München' 意味着他在那里工作。", r2: "委托：文中明确说到找 'Frau Bauer'。" },
+        { text: "Kantinen-Info: Heute gibt es Fisch oder Pasta. Mitarbeiter zahlen 4,50 Euro, Gäste zahlen 7,00 Euro. Bitte halten Sie Ihren Mitarbeiterausweis bereit.", q1: "Mitarbeiter und Gäste zahlen den gleichen Preis.", a1: "FALSCH", q2: "Was braucht man für den günstigen Preis?", opts: ["Einen Mitarbeiterausweis", "Bargeld", "Eine Reservierung"], ans2: "Einen Mitarbeiterausweis", r1: "价格对比：4.50 与 7.00 不同。", r2: "凭证：'bereit halten' (准备好) 出示员工证才能享受优惠价。" },
+        { text: "Jobangebot: Wir suchen einen Fahrer für unsere Bäckerei. Sie müssen früh aufstehen können (Arbeitsbeginn 4:00 Uhr). Ein Führerschein ist absolut notwendig.", q1: "Der Fahrer fängt am Nachmittag an zu arbeiten.", a1: "FALSCH", q2: "Welche Qualifikation ist für diesen Job wichtig?", opts: ["Ein Diplom in Mathematik", "Ein Führerschein", "Gute Kochkenntnisse"], ans2: "Ein Führerschein", r1: "时间：凌晨 4:00 是早晨，不是下午。", r2: "必要条件：文中强调 'Führerschein ist absolut notwendig'。" },
+        { text: "Wichtige Regel: Das Rauchen ist nur im Garten erlaubt. In den Büros und in der Küche ist es streng verboten. Bitte werfen Sie die Zigaretten nicht auf den Boden.", q1: "Man darf in der Küche rauchen.", a1: "FALSCH", q2: "Wo ist das Rauchen okay?", opts: ["Überall im Gebäude", "Nur im Garten", "Im Parkplatz"], ans2: "Nur im Garten", r1: "禁令：文中明确说办公区和厨房 'streng verboten' (严禁)。", r2: "唯一许可区：'nur im Garten erlaubt'。" },
+        { text: "E-Mail von IT: Morgen gibt es von 12:00 bis 13:00 Uhr kein Internet. Wir machen ein Update. Bitte speichern Sie Ihre Dokumente vorher ab.", q1: "In der Mittagspause kann man morgen nicht online arbeiten.", a1: "RICHTIG", q2: "Was ist der Grund für die Internetpause?", opts: ["Ein Fehler im System", "Ein technisches Update", "Der Chef möchte es so"], ans2: "Ein technisches Update", r1: "逻辑：没有网（kein Internet）自然无法在线工作。", r2: "原因：文中明确说 'Wir machen ein Update'。" }
+    ];
+
+    function shuffle(arr) {
+        for (let i = arr.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [arr[i], arr[j]] = [arr[j], arr[i]];
+        }
+        return arr;
+    }
+
+    let current = 0, sRF = null, sABC = null, isVerified = false;
+    const dataList = shuffle([...rawData]);
+
+    function renderQuiz(idx) {
+        current = idx; sRF = sABC = null; isVerified = false;
+        const data = dataList[current];
+        const btn = document.getElementById('action-button');
+        btn.disabled = true; btn.innerText = "Prüfen";
+        btn.className = "w-full py-4 bg-indigo-950 text-white rounded-[18px] font-black text-[14px] shadow-2xl";
+        document.getElementById('page-info').innerText = `${current + 1} / 20`;
+        const container = document.getElementById('content-area');
+        container.innerHTML = `
+            <div class="mb-4"><div class="reading-box shadow-sm"><p class="text-reading">${data.text}</p></div></div>
+            <div class="space-y-4">
+                <div class="px-1"><p class="text-[14px] font-bold text-slate-800 mb-2">${data.q1}</p>
+                    <div class="grid grid-cols-2 gap-3">
+                        <div id="rf-RICHTIG" onclick="selectRF('RICHTIG')" class="option-box text-center font-black">RICHTIG</div>
+                        <div id="rf-FALSCH" onclick="selectRF('FALSCH')" class="option-box text-center font-black">FALSCH</div>
+                    </div>
+                </div>
+                <div class="px-1"><p class="text-[14px] font-bold text-slate-800 mb-2">${data.q2}</p>
+                    <div class="space-y-2">${data.opts.map((o, i) => `<div id="abc-${i}" onclick="selectABC('${o}', ${i})" class="option-box font-black">${o}</div>`).join('')}</div>
+                </div>
+                <div id="reason-box" class="reason-area"><span class="reason-title">刘老师专业解析</span><div id="reason-content-list"></div></div>
+            </div>`;
+    }
+
+    function selectRF(v) { if(isVerified) return; sRF = v; document.getElementById('rf-RICHTIG').className = 'option-box text-center font-black '+(v==='RICHTIG'?'selected-blue':'text-slate-600'); document.getElementById('rf-FALSCH').className = 'option-box text-center font-black '+(v==='FALSCH'?'selected-blue':'text-slate-600'); checkBtn(); }
+    function selectABC(v, i) { if(isVerified) return; sABC = v; Array.from(document.querySelectorAll('[id^="abc-"]')).forEach((c, idx) => c.className = 'option-box font-black '+(idx===i?'selected-blue':'text-slate-600')); checkBtn(); }
+    function checkBtn() { if(sRF && sABC) document.getElementById('action-button').disabled = false; }
+
+    function handleSubmit() {
+        if(isVerified) {
+            if(current === 19) showCongrats();
+            else renderQuiz(current + 1);
+            return;
+        }
+        isVerified = true;
+        const data = dataList[current];
+        const btn = document.getElementById('action-button');
+        const q1W = sRF !== data.a1, q2W = sABC !== data.ans2;
+
+        if(data.a1==='RICHTIG') { document.getElementById('rf-RICHTIG').classList.add('correct-box'); if(q1W) document.getElementById('rf-FALSCH').classList.add('wrong-box'); } 
+        else { document.getElementById('rf-FALSCH').classList.add('correct-box'); if(q1W) document.getElementById('rf-RICHTIG').classList.add('wrong-box'); }
+        Array.from(document.querySelectorAll('[id^="abc-"]')).forEach(c => { if(c.innerText===data.ans2) c.classList.add('correct-box'); else if(c.innerText===sABC) c.classList.add('wrong-box'); });
+        
+        btn.innerText = "WEITER";
+        if(!q1W && !q2W) {
+            confetti({ particleCount: 30, spread: 60, origin: { y: 0.8 }, colors: ['#4F46E5', '#10B981'] });
+            btn.className = "w-full py-4 bg-emerald-600 text-white rounded-[18px] font-black shadow-lg";
+        } else {
+            const list = document.getElementById('reason-content-list'); list.innerHTML = "";
+            if(q1W) list.innerHTML += `<div class="reason-item"><span class="reason-label">[是非]</span>${data.r1}</div>`;
+            if(q2W) list.innerHTML += `<div class="reason-item"><span class="reason-label">[选择]</span>${data.r2}</div>`;
+            document.getElementById('reason-box').classList.add('show');
+            btn.className = "w-full py-4 bg-indigo-600 text-white rounded-[18px] font-black shadow-lg";
+        }
+    }
+
+    function showCongrats() {
+        const modal = document.getElementById('congrats-modal');
+        const card = document.getElementById('modal-card');
+        modal.style.display = 'flex';
+        setTimeout(() => card.classList.add('show'), 10);
+        confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 }, colors: ['#4F46E5', '#818CF8', '#FFFFFF'] });
+    }
+
+    renderQuiz(0);
+</script>
+</body>
+</html>
