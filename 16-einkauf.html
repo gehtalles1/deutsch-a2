@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>刘老师德语课 - 购物逻辑挑战</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Noto+Sans+SC:wght@400;700;900&display=swap');
+        html, body { min-height: 100%; background: #F0F9FF; font-family: 'Inter', 'Noto Sans SC', sans-serif; margin: 0; padding: 0; }
+        .app-container { background: #FFFFFF; width: 100%; max-width: 430px; min-height: 100vh; display: flex; flex-direction: column; margin: 0 auto; position: relative; }
+        .reading-box { background: linear-gradient(135deg, #E0F2FE 0%, #BAE6FD 100%); border-radius: 18px; padding: 15px 20px; border: 3px solid #0EA5E9; margin-bottom: 15px; }
+        .text-reading { font-size: 14px; line-height: 1.5; color: #0369A1; font-weight: 700; }
+        .option-box { transition: all 0.2s; border: 2px solid #E2E8F0; cursor: pointer; border-radius: 14px; background: #FFF; font-size: 13px; padding: 10px 16px !important; color: #475569; font-weight: 700; margin-bottom: 8px; }
+        .selected-blue { border-color: #0EA5E9 !important; background: #F0F9FF !important; color: #0369A1 !important; border-width: 3px !important; }
+        .correct-box { border-color: #059669 !important; background: #ECFDF5 !important; color: #064E3B !important; border-width: 3px !important; }
+        .wrong-box { border-color: #E11D48 !important; background: #FFF1F2 !important; color: #881337 !important; border-width: 3px !important; }
+        .reason-area { border-radius: 12px; padding: 12px; margin-top: 15px; margin-bottom: 100px; background: #F0F9FF; border-left: 5px solid #0EA5E9; display: none; }
+        .reason-title { font-weight: 900; color: #0369A1; font-size: 12px; margin-bottom: 4px; }
+        .reason-item { font-size: 12px; color: #0C4A6E; line-height: 1.6; margin-bottom: 10px; }
+        .safe-footer { position: sticky; bottom: 0; padding: 15px 24px calc(15px + env(safe-area-inset-bottom)); background: linear-gradient(to top, white 80%, rgba(255,255,255,0)); border-top: 1px solid #F1F5F9; z-index: 50; }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <header class="px-7 pt-6 pb-2 flex justify-between items-center">
+            <button onclick="location.href='main.html'" class="w-9 h-9 flex items-center justify-center rounded-xl bg-sky-50 border-2 border-sky-100 shadow-sm active:scale-90 transition-transform">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#0EA5E9" stroke-width="3"><path d="M15 18l-6-6 6-6"/></svg>
+            </button>
+            <span id="page-info" class="text-[13px] font-black text-sky-400 tracking-tighter">1 / 20</span>
+        </header>
+        <main class="flex-1 px-7 py-4" id="content-area"></main>
+        <footer class="safe-footer">
+            <button id="action-button" disabled onclick="handleSubmit()" class="w-full py-4 bg-sky-700 text-white rounded-[22px] font-black text-[15px] shadow-2xl active:scale-95 transition-all opacity-50">Prüfen</button>
+        </footer>
+    </div>
+
+<script>
+    const quizData = [
+        { text: "🧤 Sonderangebot: Die Handschuhe kosten nur heute 10 Euro statt 20 Euro. Aber: Reduzierte Ware nehmen wir nicht zurück.", q1: "Man bekommt die Handschuhe zum halben Preis.", a1: "RICHTIG", q2: "Welche Regel gilt für diesen Kauf?", opts: ["Keine Garantie", "Keine Rückgabe", "Nur Kartenzahlung"], ans2: "Keine Rückgabe", r1: "逻辑换算：10欧是20欧的一半，即 halber Preis。<br><b>【背词】statt 代替；Hälfte/halbe 一半</b>", r2: "逻辑替换：文中说“不能退货（nicht zurücknehmen）”，对应选项“不能退还（Keine Rückgabe）”。<br><b>【背词】Rückgabe 退还</b>" },
+        { text: "📱 Smartphone: Mein Handy ist erst drei Monate alt und das Display ist schon kaputt. Die Reparatur ist im ersten Jahr gratis.", q1: "Die Person muss für die Reparatur bezahlen.", a1: "FALSCH", q2: "Warum ist die Reparatur kostenlos?", opts: ["Wegen der Quittung", "Wegen der Garantie", "Weil es alt ist"], ans2: "Wegen der Garantie", r1: "逻辑推导：第一年免费修理，且手机才3个月，所以现在修不花钱。<br><b>【背词】gratis 免费；bezahlen 支付</b>", r2: "逻辑对应：第一年免费修理是保修期的典型特征。<br><b>【背词】Garantie 保修期</b>" },
+        { text: "🧥 Secondhand-Laden: Hier finden Sie tolle Mode aus zweiter Hand. Wir akzeptieren keine Kreditkarten, aber der nächste Geldautomat ist direkt gegenüber.", q1: "Man kann hier mit Bargeld bezahlen.", a1: "RICHTIG", q2: "Was ist wahr über das Geschäft?", opts: ["Es verkauft neue Kleidung", "Man braucht Scheine oder Münzen", "Es ist weit weg vom Automaten"], ans2: "Man braucht Scheine oder Münzen", r1: "逻辑反推：不能刷卡，意味着只能用现金（Bargeld）。<br><b>【背词】akzeptieren 接受</b>", r2: "逻辑改写：文中说没有卡，对应选项“需要纸币或硬币（现金的组成）”。<br><b>【背词】Scheine 纸币；Münzen 硬币</b>" },
+        { text: "📦 Online-Shop: Das Paket ist angekommen, aber die Hose ist zu weit. Ich schicke sie morgen an die Firma zurück.", q1: "Die Hose passt der Person nicht.", a1: "RICHTIG", q2: "Was ist das Problem mit der Hose?", opts: ["Sie ist zu eng", "Die Größe ist falsch", "Die Farbe ist falsch"], ans2: "Die Größe ist falsch", r1: "逻辑改写：太肥了（zu weit）意味着不合身（passt nicht）。<br><b>【背词】weit 肥/阔；passen 合身</b>", r2: "逻辑归类：太肥属于“尺码不对（Größe ist falsch）”，文中没提颜色。<br><b>【背词】eng 窄/紧</b>" },
+        { text: "🧾 Umtausch: Wir geben kein Geld zurück. Sie können die Jacke gegen ein anderes Modell tauschen oder einen Gutschein bekommen.", q1: "Man kann das Geld in bar bekommen.", a1: "FALSCH", q2: "Welche Option hat der Kunde?", opts: ["Nur Reparatur", "Eine Gutschrift erhalten", "Gar nichts"], ans2: "Eine Gutschrift erhalten", r1: "逻辑强调：明确说不退钱。<br><b>【背词】Geld zurück 退钱</b>", r2: "逻辑改写：文中说“代金券（Gutschein）”，对应选项“获得信用额度/代金券（Gutschrift）”。<br><b>【背词】Gutschrift 记入贷方/代金</b>" },
+        { text: "☕ Kaffeemaschine: Dieses Gerät ist gebraucht, funktioniert aber wie neu. Deshalb geben wir Ihnen sechs Monate Garantie statt nur drei.", q1: "Das Gerät ist brandneu.", a1: "FALSCH", q2: "Wie lange kann man das Gerät bei Defekt kostenlos bringen?", opts: ["Ein halbes Jahr", "Ein Vierteljahr", "Drei Monate"], ans2: "Ein halbes Jahr", r1: "逻辑细节：gebraucht（二手）和 neu（新）是对立的。<br><b>【背词】gebraucht 二手的</b>", r2: "逻辑换算：6个月等于“半年（ein halbes Jahr）”。选项避开了数字6。<br><b>【背词】Vierteljahr 季度（3个月）</b>" },
+        { text: "🧺 Selbstbedienung: Bitte scannen Sie Ihre Ware selbst an der Kasse. Personal für die Bezahlung gibt es hier nicht.", q1: "Man muss die Produkte selbst scannen.", a1: "RICHTIG", q2: "Wie bezahlt man in diesem Laden?", opts: ["Beim Verkäufer", "An einem Automaten", "Gar nicht"], ans2: "An einem Automaten", r1: "逻辑理解：Self-service 意味着自己操作。<br><b>【背词】Selbstbedienung 自助</b>", r2: "逻辑反推：没有人工收费（Personal），对应选项“在机器上（Automaten）付费”。<br><b>【背词】Personal 人员</b>" },
+        { text: "🧴 Drogerie: Unsere neue Creme ist sehr teuer, aber Sie brauchen nur ganz wenig davon für Ihr Gesicht.", q1: "Man verbraucht viel von der Creme.", a1: "FALSCH", q2: "Was sagt der Text über das Produkt?", opts: ["Es ist billig", "Man nutzt es lange", "Es ist für den Körper"], ans2: "Man nutzt es lange", r1: "逻辑对应：少用（wenig）意味着省，即不费（viel）。<br><b>【背词】verbrauchen 消耗</b>", r2: "逻辑延伸：每次用一点点（wenig），意味着一瓶可以“用很久”。<br><b>【背词】wenig 少</b>" },
+        { text: "💻 Reparatur: Wir können Ihren Laptop nicht heute reparieren. Die Ersatzteile kommen erst am Mittwoch an.", q1: "Der Laptop ist am Dienstag fertig.", a1: "FALSCH", q2: "Warum dauert die Reparatur länger?", opts: ["Der Techniker ist krank", "Es fehlen Teile", "Der Laden ist zu"], ans2: "Es fehlen Teile", r1: "时间逻辑：周三零件才到，周二肯定修不好。<br><b>【背词】fertig 完成</b>", r2: "逻辑改写：文中说“零件周三到（Ersatzteile）”，对应选项“缺零件（fehlen Teile）”。<br><b>【背词】Ersatzteile 备件</b>" },
+        { text: "🎟️ Treuekarte: Sammeln Sie zehn Punkte und Sie bekommen den nächsten Kaffee gratis!", q1: "Der zehnte Kaffee ist kostenlos.", a1: "FALSCH", q2: "Wie bekommt man ein kostenloses Getränk?", opts: ["Man muss viel bezahlen", "Man muss oft kommen", "Man braucht einen Gutschein"], ans2: "Man muss oft kommen", r1: "逻辑陷阱：要集满10个点，所以是“第11个”免费，而非第10个。<br><b>【背词】nächste 下一个</b>", r2: "逻辑延伸：集点意味着需要“经常光顾（oft kommen）”。<br><b>【背词】sammeln 收集</b>" },
+        { text: "🥖 Bäckerei: Brot vom Vortag verkaufen wir zum halben Preis. Es schmeckt immer noch sehr gut.", q1: "Das Brot ist nicht frisch von heute.", a1: "RICHTIG", q2: "Warum ist das Brot so günstig?", opts: ["Es ist kaputt", "Es ist nicht von heute", "Es schmeckt nicht"], ans2: "Es ist nicht von heute", r1: "逻辑改写：Vortag（前一天）意味着“不是今天的（nicht von heute）”。<br><b>【背词】Vortag 前一天</b>", r2: "逻辑换算：半价对应 günstig（便宜/实惠）。选项使用了同义改写。<br><b>【背词】günstig 实惠的</b>" },
+        { text: "👞 Schaufenster: Diese Schuhe im Fenster sind nur Dekoration. Wir haben dieses Modell momentan nicht im Laden.", q1: "Man kann diese Schuhe sofort kaufen.", a1: "FALSCH", q2: "Warum kann man die Schuhe nicht anprobieren?", opts: ["Sie sind zu teuer", "Sie sind nicht vorrätig", "Der Laden ist geschlossen"], ans2: "Sie sind nicht vorrätig", r1: "逻辑理解：只是装饰且店里没货，所以买不到。<br><b>【背词】Dekoration 装饰</b>", r2: "逻辑词汇：店里没有对应选项“无库存（nicht vorrätig）”。<br><b>【背词】vorrätig 有库存的</b>" },
+        { text: "👗 Modehaus: Wir liefern Ihre Kleidung kostenlos nach Hause, wenn Sie für mehr als 100 Euro einkaufen.", q1: "Der Versand kostet immer Geld.", a1: "FALSCH", q2: "Wann ist der Transport gratis?", opts: ["Immer", "Ab einem hohen Preis", "Nie"], ans2: "Ab einem hohen Preis", r1: "逻辑排除：有条件免费，所以不是“总是（immer）”收钱。<br><b>【背词】Versand 邮寄</b>", r2: "逻辑改写：文中说“超过100欧”，对应选项“达到一个高价位”。<br><b>【背词】liefern 递送</b>" },
+        { text: "🥩 Metzgerei: Unsere Wurst ist ohne Fleisch. Wir nutzen nur Gemüse und Eier. Das ist gesund!", q1: "In der Wurst ist Schweinefleisch.", a1: "FALSCH", q2: "Was ist das Besondere an der Wurst?", opts: ["Sie ist für Vegetarier", "Sie ist sehr billig", "Sie hat viel Fett"], ans2: "Sie ist für Vegetarier", r1: "逻辑对应：无肉（ohne Fleisch）对应无猪肉。<br><b>【背词】ohne 不含</b>", r2: "逻辑分类：由蔬菜和蛋类制作，对应“适合素食者”。选项考查常识分类。<br><b>【背词】Vegetarier 素食者</b>" },
+        { text: "📺 TV-Angebot: Nur diesen Samstag: Wer einen Fernseher kauft, bekommt ein Radio geschenkt!", q1: "Das Radio kostet nichts extra.", a1: "RICHTIG", q2: "Wie bekommt man das Radio?", opts: ["Man muss es bezahlen", "Man muss etwas anderes kaufen", "Man bekommt es immer"], ans2: "Man muss etwas anderes kaufen", r1: "逻辑改写：赠送（geschenkt）意味着免费。<br><b>【背词】extra 额外的</b>", r2: "逻辑关联：买电视送收音机，即“必须买别的东西”才能得到它。<br><b>【背词】bekommen 获得</b>" },
+        { text: "💡 Baumarkt: Diese Lampen sparen 80% Energie. Sie sind teuer beim Kauf, aber gut für Ihre Stromrechnung.", q1: "Man bezahlt später weniger für Strom.", a1: "RICHTIG", q2: "Was ist ein Nachteil (缺点) der Lampen?", opts: ["Die Qualität", "Der Preis im Laden", "Das Licht"], ans2: "Der Preis im Laden", r1: "逻辑因果：省电意味着电费单（Stromrechnung）金额会变少。<br><b>【背词】Stromrechnung 电费单</b>", r2: "逻辑提取：文中说购买时很贵（teuer beim Kauf），对应选项“店里的价格（是缺点）”。<br><b>【背词】Nachteil 缺点</b>" },
+        { text: "🍏 Markt: Die Bio-Äpfel sehen nicht perfekt aus, aber sie sind sehr süß und ohne Chemie.", q1: "Die Äpfel sind optisch nicht schön.", a1: "RICHTIG", q2: "Was ist positiv an den Äpfeln?", opts: ["Die Farbe", "Die Gesundheit", "Der Preis"], ans2: "Die Gesundheit", r1: "逻辑改写：外观不完美（nicht perfekt aussehen）对应“视觉上不漂亮（optisch nicht schön）”。<br><b>【背词】optisch 视觉上的</b>", r2: "逻辑关联：无化学添加（ohne Chemie）对应选项“健康”。<br><b>【背词】Chemie 化学</b>" },
+        { text: "👚 Qualität: Dieses T-Shirt besteht zu 100% aus Baumwolle. Man darf es aber nur bei 30 Grad waschen.", q1: "Man kann das T-Shirt heiß waschen.", a1: "FALSCH", q2: "Woraus ist das T-Shirt?", opts: ["Aus Plastik", "Aus einem Naturprodukt", "Aus Papier"], ans2: "Aus einem Naturprodukt", r1: "逻辑限制：只能30度洗，不能高温（heiß）洗。<br><b>【背词】Grad 度数；heiß 热/高温</b>", r2: "逻辑改写：棉花（Baumwolle）对应选项“天然产品”。选项避开了材料直呼其名。<br><b>【背词】Baumwolle 棉花</b>" },
+        { text: "⌚ Uhren: Wir reparieren Ihre Uhr innerhalb von 24 Stunden. Wenn es länger dauert, ist die Reparatur für Sie kostenlos.", q1: "Die Reparatur ist immer gratis.", a1: "FALSCH", q2: "Wann muss der Kunde nichts bezahlen?", opts: ["Wenn die Uhr neu ist", "Wenn der Service langsam ist", "Wenn er eine Karte hat"], ans2: "Wenn der Service langsam ist", r1: "条件逻辑：只有超时才免费，不是一直免费。<br><b>【背词】innerhalb 在...之内</b>", r2: "逻辑改写：文中说“如果花费时间更长”，对应选项“如果服务慢”。<br><b>【背词】dauert 持续时间</b>" },
+        { text: "🚲 Vermietung: Ein Fahrrad kostet 15 Euro pro Tag. Wenn Sie es für eine Woche mieten, bezahlen Sie nur für fünf Tage.", q1: "Man spart Geld bei einer langen Miete.", a1: "RICHTIG", q2: "Wie viel bezahlt man für 7 Tage?", opts: ["105 Euro", "75 Euro", "15 Euro"], ans2: "75 Euro", r1: "逻辑理解：租一周只需付5天的钱，确实省了钱。<br><b>【背词】mieten 租用</b>", r2: "逻辑计算：7天即一周，按5天算钱：15 * 5 = 75。选项考查数学逻辑。<br><b>【背词】pro Tag 每天</b>" }
+    ];
+
+    let current = 0, sRF = null, sABC = null, isVerified = false;
+    const dataList = [...quizData].sort(() => Math.random() - 0.5);
+
+    function renderQuiz(idx) {
+        current = idx; sRF = sABC = null; isVerified = false;
+        const data = dataList[current];
+        const btn = document.getElementById('action-button');
+        btn.disabled = true; btn.innerText = "Prüfen";
+        btn.className = "w-full py-4 bg-sky-700 text-white rounded-[22px] font-black text-[15px] shadow-2xl opacity-50";
+        document.getElementById('page-info').innerText = `${current + 1} / ${dataList.length}`;
+        document.getElementById('content-area').innerHTML = `
+            <div class="reading-box"><p class="text-reading">${data.text}</p></div>
+            <div class="w-full">
+                <p class="text-[14px] font-black text-slate-800 mb-3">${data.q1}</p>
+                <div class="grid grid-cols-2 gap-4 mb-6">
+                    <div id="rf-RICHTIG" onclick="selectRF('RICHTIG')" class="option-box text-center">RICHTIG</div>
+                    <div id="rf-FALSCH" onclick="selectRF('FALSCH')" class="option-box text-center">FALSCH</div>
+                </div>
+                <p class="text-[14px] font-black text-slate-800 mb-3">${data.q2}</p>
+                <div class="space-y-1">${data.opts.map((o, i) => `<div id="abc-${i}" onclick="selectABC('${o}', ${i})" class="option-box">${o}</div>`).join('')}</div>
+            </div>
+            <div id="reason-box" class="reason-area"><span class="reason-title">刘老师逻辑拆解</span><div id="reason-content" class="space-y-1"></div></div>`;
+        window.scrollTo(0, 0);
+    }
+
+    function selectRF(v) { if(isVerified) return; sRF = v; document.getElementById('rf-RICHTIG').className = 'option-box text-center '+(v==='RICHTIG'?'selected-blue':'text-slate-400'); document.getElementById('rf-FALSCH').className = 'option-box text-center '+(v==='FALSCH'?'selected-blue':'text-slate-400'); checkBtn(); }
+    function selectABC(v, i) { if(isVerified) return; sABC = v; Array.from(document.querySelectorAll('[id^="abc-"]')).forEach((c, idx) => c.className = 'option-box '+(idx===i?'selected-blue':'text-slate-400')); checkBtn(); }
+    function checkBtn() { if(sRF && sABC) { const btn = document.getElementById('action-button'); btn.disabled = false; btn.classList.remove('opacity-50'); } }
+
+    function handleSubmit() {
+        const btn = document.getElementById('action-button');
+        if(isVerified) {
+            if(current === dataList.length - 1) { alert("Herzlichen Glückwunsch! 逻辑满分，购物达人！"); location.href = 'main.html'; return; }
+            renderQuiz(current + 1); return;
+        }
+        isVerified = true;
+        const data = dataList[current];
+        const q1Correct = sRF === data.a1, q2Correct = sABC === data.ans2;
+
+        const rfRichtig = document.getElementById('rf-RICHTIG');
+        const rfFalsch = document.getElementById('rf-FALSCH');
+        if(data.a1==='RICHTIG') {
+            rfRichtig.classList.add('correct-box');
+            if(sRF === 'FALSCH') rfFalsch.classList.add('wrong-box');
+        } else {
+            rfFalsch.classList.add('correct-box');
+            if(sRF === 'RICHTIG') rfRichtig.classList.add('wrong-box');
+        }
+
+        Array.from(document.querySelectorAll('[id^="abc-"]')).forEach(c => {
+            if(c.innerText === data.ans2) c.classList.add('correct-box');
+            else if(c.innerText === sABC) c.classList.add('wrong-box');
+        });
+
+        if (q1Correct && q2Correct) {
+            confetti({ particleCount: 40, spread: 70, origin: { y: 0.8 }, colors: ['#0EA5E9', '#38BDF8'] });
+            btn.className = "w-full py-4 bg-emerald-600 text-white rounded-[22px] font-black text-[15px] shadow-2xl";
+        } else {
+            let innerHtml = "";
+            if(!q1Correct) innerHtml += `<div class="reason-item">🚩 <b>Q1 解析:</b> ${data.r1}</div>`;
+            if(!q2Correct) innerHtml += `<div class="reason-item">🚩 <b>Q2 解析:</b> ${data.r2}</div>`;
+            document.getElementById('reason-content').innerHTML = innerHtml;
+            document.getElementById('reason-box').style.display = 'block';
+            setTimeout(() => { window.scrollBy({ top: 150, behavior: 'smooth' }); }, 100);
+            btn.className = "w-full py-4 bg-sky-600 text-white rounded-[22px] font-black text-[15px] shadow-2xl";
+        }
+        btn.innerText = "Nächste Frage";
+    }
+    renderQuiz(0);
+</script>
+</body>
+</html>
